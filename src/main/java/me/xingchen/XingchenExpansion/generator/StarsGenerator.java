@@ -29,9 +29,14 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.inventory.ClickType;
+import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
@@ -45,10 +50,9 @@ import java.util.concurrent.ConcurrentHashMap;
 public class StarsGenerator extends SlimefunItem implements EnergyNetProvider, InventoryBlock, EnergyNetComponent, Listener {
     private static final int INPUT_SLOT = 10, STATUS_SLOT = 13;
     private static final int[] OUTPUT_SLOTS = {14, 15, 16}, PROTECTED_SLOTS = {INPUT_SLOT, STATUS_SLOT, 14, 15, 16};
-    private static final ItemStack DECORATION = new CustomItemStack(Material.GRAY_STAINED_GLASS_PANE, "&7 ");
-    private static final ItemStack OUTPUT_PLACEHOLDER = new CustomItemStack(Material.GREEN_STAINED_GLASS_PANE, "&a输出槽", "&7仅限取出物品");
+    private static final ItemStack BACKGROUND_ITEM = new CustomItemStack(Material.GRAY_STAINED_GLASS_PANE, "&7 ");
     private static final Set<String> FUEL_IDS = Set.of("STARS_ORE", "STARS_INGOT", "STARS_CRYSTAL");
-    private static final Map<String, SlimefunItemStack> WASTE_ITEMS = Map.of("STARS_WASTE", Items.STARS_WASTE);
+    private static final String WASTE_ID = "STARS_WASTE";
     private static final NamespacedKey SLIMEFUN_KEY = new NamespacedKey("slimefun", "slimefun_item");
     private static final String BURNING_TIME_KEY = "burning_time";
     private static final String FUEL_ID_KEY = "fuel_id";
@@ -122,19 +126,16 @@ public class StarsGenerator extends SlimefunItem implements EnergyNetProvider, I
                         try {
                             if (BlockStorage.hasBlockInfo(loc)) {
                                 String existingId = BlockStorage.getLocationInfo(loc, "id");
-                                plugin.getLogger().warning("位置 " + loc + " 已存在 Slimefun 数据: " + existingId);
                                 if ("STARS_GENERATOR".equals(existingId)) {
                                     generatorLocations.add(loc.clone());
                                     return;
-                                } else {
-                                    event.setCancelled(true);
-                                    event.getPlayer().sendMessage("§c此位置已被其他 Slimefun 方块占用！");
-                                    return;
                                 }
+                                event.setCancelled(true);
+                                event.getPlayer().sendMessage("§c此位置已被其他 Slimefun 方块占用！");
+                                return;
                             }
                             BlockStorage.addBlockInfo(block, "id", "STARS_GENERATOR");
                             generatorLocations.add(loc.clone());
-                            plugin.getLogger().info("发电机放置: " + loc);
                         } catch (IllegalStateException e) {
                             plugin.getLogger().warning("无法注册 BlockStorage 数据，位置: " + loc + ", 错误: " + e.getMessage());
                             event.setCancelled(true);
@@ -145,12 +146,10 @@ public class StarsGenerator extends SlimefunItem implements EnergyNetProvider, I
                 new BlockUseHandler() {
                     @Override
                     public void onRightClick(PlayerRightClickEvent event) {
-                        Optional<Block> blockOpt = event.getClickedBlock();
-                        if (blockOpt.isEmpty()) return;
-                        BlockMenu menu = BlockStorage.getInventory(blockOpt.get());
-                        if (menu == null) return;
-                        updateStatus(menu);
-                        event.getPlayer().openInventory(menu.getInventory());
+                        if (event.getPlayer().isSneaking()) {
+                            return; // 潜行右键：允许默认交互
+                        }
+                        // 非潜行右键：依赖 PlayerRightClickEvent
                     }
                 },
                 new SimpleBlockBreakHandler() {
@@ -160,14 +159,13 @@ public class StarsGenerator extends SlimefunItem implements EnergyNetProvider, I
                         if (menu != null) {
                             for (int slot : new int[]{INPUT_SLOT, 14, 15, 16}) {
                                 ItemStack content = menu.getItemInSlot(slot);
-                                if (content != null && content.getType() != Material.GREEN_STAINED_GLASS_PANE) {
+                                if (content != null) {
                                     block.getWorld().dropItemNaturally(block.getLocation(), content.clone());
                                 }
                             }
                         }
                         BlockStorage.clearBlockInfo(block);
                         generatorLocations.remove(block.getLocation());
-                        plugin.getLogger().info("发电机破坏: " + block.getLocation());
                     }
                 }
         );
@@ -180,13 +178,14 @@ public class StarsGenerator extends SlimefunItem implements EnergyNetProvider, I
                 for (int i = 0; i < 27; i++) {
                     int finalI = i;
                     if (!Arrays.stream(PROTECTED_SLOTS).anyMatch(s -> s == finalI)) {
-                        addItem(i, DECORATION, (p, s, item, action) -> false);
+                        addItem(i, BACKGROUND_ITEM, (p, s, item, action) -> false);
                     }
                 }
-                for (int slot : OUTPUT_SLOTS) {
-                    addItem(slot, OUTPUT_PLACEHOLDER, (p, s, item, action) -> false);
-                }
+                addMenuClickHandler(INPUT_SLOT, (p, s, item, action) -> true);
                 addMenuClickHandler(STATUS_SLOT, (p, s, item, action) -> false);
+                for (int slot : OUTPUT_SLOTS) {
+                    addMenuClickHandler(slot, (p, s, item, action) -> true);
+                }
             }
 
             @Override
@@ -196,35 +195,29 @@ public class StarsGenerator extends SlimefunItem implements EnergyNetProvider, I
 
             @Override
             public int[] getSlotsAccessedByItemTransport(ItemTransportFlow flow) {
-                if (flow == ItemTransportFlow.INSERT) return new int[]{INPUT_SLOT};
-                plugin.getLogger().info("货运访问，发电机位置数量: " + generatorLocations.size());
-                List<Integer> validSlots = new ArrayList<>();
-                for (Location loc : generatorLocations) {
-                    plugin.getLogger().info("检查发电机位置: " + loc);
-                    BlockMenu menu = BlockStorage.getInventory(loc.getBlock());
-                    if (menu != null && menu.getPreset().getID().equals("STARS_GENERATOR")) {
-                        for (int slot : OUTPUT_SLOTS) {
-                            ItemStack item = menu.getItemInSlot(slot);
-                            if (item != null && item.getType() != Material.GREEN_STAINED_GLASS_PANE) {
-                                validSlots.add(slot);
-                            }
-                            // 检查货运后槽位状态
-                            if (item == null || item.getType() == Material.AIR || item.getAmount() == 0) {
-                                plugin.getLogger().info("货运清空槽位 " + slot + "，恢复占位玻璃板");
-                                menu.replaceExistingItem(slot, OUTPUT_PLACEHOLDER.clone());
-                            }
-                        }
-                        plugin.getLogger().info("货运有效槽位: " + validSlots);
-                        return validSlots.stream().mapToInt(Integer::intValue).toArray();
-                    } else {
-                        plugin.getLogger().warning("BlockMenu 获取失败，位置: " + loc + ", BlockStorage ID: " + BlockStorage.getLocationInfo(loc, "id"));
-                    }
-                }
-                plugin.getLogger().warning("无法找到匹配的发电机 BlockMenu，货运无法访问输出槽");
-                return new int[0];
+                return flow == ItemTransportFlow.INSERT ? new int[]{INPUT_SLOT} : OUTPUT_SLOTS;
             }
         };
         preset.setPlayerInventoryClickable(true);
+    }
+
+    @EventHandler(priority = EventPriority.HIGH)
+    public void onPlayerRightClick(PlayerRightClickEvent event) {
+        Optional<Block> blockOpt = event.getClickedBlock();
+        if (blockOpt.isEmpty()) return;
+
+        Block block = blockOpt.get();
+        String blockId = BlockStorage.getLocationInfo(block.getLocation(), "id");
+        if (!"STARS_GENERATOR".equals(blockId)) return;
+
+        Player player = event.getPlayer();
+        if (player.isSneaking()) return; // 潜行右键：允许默认交互
+
+        event.cancel(); // 非潜行右键：打开 UI，阻止其他交互
+        BlockMenu menu = BlockStorage.getInventory(block);
+        if (menu == null) return;
+        updateStatus(menu);
+        player.openInventory(menu.getInventory());
     }
 
     @EventHandler
@@ -232,73 +225,116 @@ public class StarsGenerator extends SlimefunItem implements EnergyNetProvider, I
         if (!(event.getInventory().getHolder() instanceof BlockMenu menu) || !menu.getPreset().getID().equals("STARS_GENERATOR")) {
             return;
         }
-        if (event.getClickedInventory() != menu.toInventory()) {
-            return;
-        }
-        int slot = event.getSlot();
         Player player = (Player) event.getWhoClicked();
+        int slot = event.getSlot();
+        int rawSlot = event.getRawSlot();
+        org.bukkit.event.inventory.ClickType click = event.getClick();
+        Inventory clickedInventory = event.getClickedInventory();
+        boolean isBlockMenu = clickedInventory != null && clickedInventory.equals(menu.toInventory());
+        boolean isPlayerInventory = clickedInventory != null && clickedInventory.equals(player.getInventory());
 
-        // 输入槽：只允许燃料
-        if (slot == INPUT_SLOT) {
-            ItemStack cursor = event.getCursor();
-            if (cursor != null && cursor.getType() != Material.AIR) {
-                String fuelId = getFuelId(cursor);
-                if (fuelId == null) {
+        // 背包 Shift+左键：只允许转移到输入槽
+        if (isPlayerInventory && click == ClickType.SHIFT_LEFT && event.getAction() == InventoryAction.MOVE_TO_OTHER_INVENTORY) {
+            ItemStack current = event.getCurrentItem();
+            if (current != null && current.getType() != Material.AIR) {
+                ItemStack inputItem = menu.getItemInSlot(INPUT_SLOT);
+                boolean canInsertInput = inputItem == null || inputItem.getType() == Material.AIR ||
+                        (inputItem.isSimilar(current) && inputItem.getAmount() < inputItem.getMaxStackSize());
+
+                if (!canInsertInput) {
                     event.setCancelled(true);
-                    plugin.getServer().getScheduler().runTask(plugin, () -> {
-                        player.setItemOnCursor(null);
-                        returnItem(player, cursor.clone());
-                        player.sendMessage("§c只能放入星辰燃料！");
-                    });
+                    player.sendMessage("§c输入槽已满或不可存入！");
+                    plugin.getLogger().info("阻止 Shift+左键: 输入槽不可用, 物品=" + current.getType() + ", 槽位=" + slot);
+                    return;
                 }
             }
+        }
+
+        // 输入槽：允许存入和取出
+        if (rawSlot == INPUT_SLOT && isBlockMenu) {
             return;
         }
 
-        // 输出槽：手动处理取出
-        if (Arrays.stream(OUTPUT_SLOTS).anyMatch(s -> s == slot)) {
-            ItemStack item = menu.getItemInSlot(slot);
-            if (item == null || item.getType() == Material.GREEN_STAINED_GLASS_PANE) {
-                event.setCancelled(true);
-                plugin.getLogger().info("玩家尝试点击空槽或占位玻璃板，槽位: " + slot);
-                return;
-            }
+        // 输出槽：允许特定取出，阻止存入
+        if (Arrays.stream(OUTPUT_SLOTS).anyMatch(s -> s == rawSlot) && isBlockMenu) {
+            ItemStack cursor = event.getCursor();
+            boolean isInsert = (cursor != null && cursor.getType() != Material.AIR) ||
+                    (click == ClickType.SHIFT_LEFT && event.getAction() == InventoryAction.MOVE_TO_OTHER_INVENTORY) ||
+                    click.isKeyboardClick();
 
-            // 允许的点击类型：LEFT, SHIFT_LEFT, NUMBER_KEY, DROP
-            org.bukkit.event.inventory.ClickType click = event.getClick();
-            if (click != org.bukkit.event.inventory.ClickType.LEFT &&
-                    click != org.bukkit.event.inventory.ClickType.SHIFT_LEFT &&
-                    click != org.bukkit.event.inventory.ClickType.NUMBER_KEY &&
-                    click != org.bukkit.event.inventory.ClickType.DROP) {
+            if (isInsert) {
                 event.setCancelled(true);
-                plugin.getLogger().info("玩家使用无效点击类型: " + click + "，槽位: " + slot);
+                ItemStack item = cursor != null && cursor.getType() != Material.AIR ? cursor :
+                        click.isKeyboardClick() ? player.getInventory().getItem(event.getHotbarButton()) : null;
+
+                if (item != null && item.getType() != Material.AIR) {
+                    returnItem(player, item.clone());
+                    if (cursor != null && cursor.getType() != Material.AIR) {
+                        player.setItemOnCursor(null);
+                    } else if (click.isKeyboardClick()) {
+                        player.getInventory().setItem(event.getHotbarButton(), null);
+                    }
+                    player.sendMessage("§c输出槽不支持存入！");
+                    plugin.getLogger().info("阻止存入输出槽: 物品=" + item.getType() + ", 槽位=" + rawSlot);
+                }
+
+                // 延迟检查输出槽
+                plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+                    for (int outputSlot : OUTPUT_SLOTS) {
+                        ItemStack outputItem = menu.getItemInSlot(outputSlot);
+                        if (outputItem != null && outputItem.getType() != Material.AIR && getWasteId(outputItem) == null) {
+                            returnItem(player, outputItem.clone());
+                            menu.replaceExistingItem(outputSlot, null);
+                            player.sendMessage("§c输出槽不支持存入！");
+                            plugin.getLogger().info("延迟检查移除非法物品: 输出槽=" + outputSlot + ", 物品=" + outputItem.getType());
+                        }
+                    }
+                }, 2L);
+            } else if (click != ClickType.LEFT && click != ClickType.SHIFT_LEFT &&
+                    click != ClickType.NUMBER_KEY && click != ClickType.DROP) {
+                event.setCancelled(true);
                 player.sendMessage("§c输出槽只能左键、Shift+左键、数字键或丢弃键取出！");
-                return;
-            }
-
-            // 记录点击详情
-            plugin.getLogger().info("玩家点击输出槽，槽位: " + slot + "，点击类型: " + click + "，物品: " + item.getType());
-
-            // 手动移动物品到玩家背包
-            event.setCancelled(true); // 防止 Slimefun 拦截
-            ItemStack itemClone = item.clone();
-            HashMap<Integer, ItemStack> unadded = player.getInventory().addItem(itemClone);
-            if (unadded.isEmpty()) {
-                // 成功添加到背包，清空槽位
-                menu.replaceExistingItem(slot, OUTPUT_PLACEHOLDER.clone());
-                plugin.getLogger().info("玩家成功取出物品，槽位: " + slot + "，恢复占位玻璃板");
-            } else {
-                // 背包满，掉落物品
-                player.getWorld().dropItemNaturally(player.getLocation(), itemClone);
-                menu.replaceExistingItem(slot, OUTPUT_PLACEHOLDER.clone());
-                plugin.getLogger().info("玩家背包满，物品掉落，槽位: " + slot + "，恢复占位玻璃板");
             }
         }
     }
 
+    @EventHandler
+    public void onInventoryDrag(InventoryDragEvent event) {
+        if (!(event.getInventory().getHolder() instanceof BlockMenu menu) || !menu.getPreset().getID().equals("STARS_GENERATOR")) {
+            return;
+        }
+        Player player = (Player) event.getWhoClicked();
+        ItemStack cursor = event.getOldCursor();
+
+        // 输入槽：允许拖拽存入
+        if (event.getRawSlots().contains(INPUT_SLOT)) {
+            return;
+        }
+
+        // 输出槽：阻止拖拽存入
+        if (event.getRawSlots().stream().anyMatch(slot -> Arrays.stream(OUTPUT_SLOTS).anyMatch(s -> s == slot))) {
+            event.setCancelled(true);
+            if (cursor != null && cursor.getType() != Material.AIR) {
+                returnItem(player, cursor.clone());
+                event.setCursor(null);
+                player.sendMessage("§c输出槽不支持存入！");
+                plugin.getLogger().info("阻止拖拽存入输出槽: 物品=" + cursor.getType());
+            }
+        }
+    }
+
+    private String getWasteId(ItemStack item) {
+        if (item == null || !item.hasItemMeta()) return null;
+        PersistentDataContainer pdc = item.getItemMeta().getPersistentDataContainer();
+        String slimefunId = pdc.get(SLIMEFUN_KEY, PersistentDataType.STRING);
+        return slimefunId != null && slimefunId.equals(WASTE_ID) ? slimefunId : null;
+    }
+
     private void returnItem(Player player, ItemStack item) {
-        if (player.getInventory().addItem(item).isEmpty()) return;
-        player.getWorld().dropItemNaturally(player.getLocation(), item);
+        HashMap<Integer, ItemStack> unadded = player.getInventory().addItem(item);
+        if (!unadded.isEmpty()) {
+            player.getWorld().dropItemNaturally(player.getLocation(), item);
+        }
     }
 
     private String getFuelId(ItemStack item) {
@@ -309,9 +345,9 @@ public class StarsGenerator extends SlimefunItem implements EnergyNetProvider, I
     }
 
     private void updateStatus(BlockMenu menu) {
-        ItemStack item = menu.getItemInSlot(INPUT_SLOT);
+        ItemStack inputItem = menu.getItemInSlot(INPUT_SLOT);
         int energy = 0;
-        String fuelId = getFuelId(item);
+        String fuelId = getFuelId(inputItem);
         if (fuelId != null) {
             FuelConfig config = fuels.get(fuelId);
             if (config != null) energy = config.energyPerTick;
@@ -323,7 +359,7 @@ public class StarsGenerator extends SlimefunItem implements EnergyNetProvider, I
             ItemMeta meta = status.getItemMeta();
             meta.setDisplayName("§c能量: 0 J/tick");
             status.setItemMeta(meta);
-            menu.addItem(STATUS_SLOT, status, (p, s, i, a) -> false);
+            menu.addItem(STATUS_SLOT, status, (p, s, clickedItem, action) -> false);
         }
         ItemMeta meta = status.getItemMeta();
         meta.setDisplayName("§c能量: " + energy + " J/tick");
@@ -342,14 +378,10 @@ public class StarsGenerator extends SlimefunItem implements EnergyNetProvider, I
                 ItemMeta meta = status.getItemMeta();
                 meta.setDisplayName("§c能量: 0 J/tick");
                 status.setItemMeta(meta);
-                menu.addItem(STATUS_SLOT, status, (p, s, i, a) -> false);
-                for (int slot : OUTPUT_SLOTS) {
-                    menu.replaceExistingItem(slot, OUTPUT_PLACEHOLDER.clone());
-                }
+                menu.addItem(STATUS_SLOT, status, (p, s, clickedItem, action) -> false);
                 generatorLocations.add(location.clone());
-                plugin.getLogger().info("发电机初始化: " + location);
             } catch (IllegalStateException e) {
-                plugin.getLogger().warning("无法初始化 BlockStorage 数据，位置: " + location + ", 错误: " + e.getMessage());
+                plugin.getLogger().warning("无法初始化 BlockStorage 数据，位置: " + location);
                 return 0;
             }
         }
@@ -366,15 +398,15 @@ public class StarsGenerator extends SlimefunItem implements EnergyNetProvider, I
             return config != null ? config.energyPerTick : 0;
         }
 
-        ItemStack item = menu.getItemInSlot(INPUT_SLOT);
-        if (item == null) {
+        ItemStack inputItem = menu.getItemInSlot(INPUT_SLOT);
+        if (inputItem == null) {
             BlockStorage.addBlockInfo(location, BURNING_TIME_KEY, null);
             BlockStorage.addBlockInfo(location, FUEL_ID_KEY, null);
             updateStatus(menu);
             return 0;
         }
 
-        String fuelId = getFuelId(item);
+        String fuelId = getFuelId(inputItem);
         if (fuelId == null) {
             updateStatus(menu);
             return 0;
@@ -386,8 +418,8 @@ public class StarsGenerator extends SlimefunItem implements EnergyNetProvider, I
             return 0;
         }
 
-        int newAmount = item.getAmount() - 1;
-        ItemStack newItem = newAmount > 0 ? item.clone() : null;
+        int newAmount = inputItem.getAmount() - 1;
+        ItemStack newItem = newAmount > 0 ? inputItem.clone() : null;
         if (newItem != null) newItem.setAmount(newAmount);
         menu.replaceExistingItem(INPUT_SLOT, newItem);
 
@@ -395,11 +427,11 @@ public class StarsGenerator extends SlimefunItem implements EnergyNetProvider, I
         BlockStorage.addBlockInfo(location, FUEL_ID_KEY, fuelId);
 
         if (fuelConfig.wasteAmount > 0) {
-            ItemStack waste = WASTE_ITEMS.get("STARS_WASTE").clone();
+            ItemStack waste = Items.STARS_WASTE.clone();
             waste.setAmount(fuelConfig.wasteAmount);
             for (int slot : OUTPUT_SLOTS) {
                 ItemStack existing = menu.getItemInSlot(slot);
-                if (existing == null || existing.getType() == Material.GREEN_STAINED_GLASS_PANE) {
+                if (existing == null) {
                     menu.replaceExistingItem(slot, waste.clone());
                     break;
                 } else if (existing.isSimilar(waste)) {

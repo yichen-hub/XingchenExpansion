@@ -4,61 +4,95 @@ import io.github.thebusybiscuit.slimefun4.api.items.SlimefunItem;
 import io.github.thebusybiscuit.slimefun4.api.items.SlimefunItemStack;
 import me.xingchen.XingchenExpansion.XingchenExpansion;
 import me.xingchen.XingchenExpansion.generator.StarsGenerator;
+import me.xingchen.XingchenExpansion.generator.StarsSolarGeneratorL1;
+import me.xingchen.XingchenExpansion.generator.StarsSolarGeneratorL2;
 import org.bukkit.plugin.java.JavaPlugin;
 
+
+
 public class ItemRegistry {
+    /**
+     * 注册所有物品和机器。
+     *
+     * @param plugin 主插件实例
+     */
     public static void register(JavaPlugin plugin) {
-        // 普通物品
+        // 注册材料
         registerItem(plugin, Items.STARS_ORE, "STARS_ORE");
         registerItem(plugin, Items.STARS_INGOT, "STARS_INGOT");
         registerItem(plugin, Items.STARS_CRYSTAL, "STARS_CRYSTAL");
         registerItem(plugin, Items.STARS_WASTE, "STARS_WASTE");
-        // 机器
-        registerGenerator(plugin, Items.STARS_GENERATOR, "STARS_GENERATOR");
+
+        // 注册发电机
+        registerGenerator(plugin, Items.STARS_GENERATOR, new StarsGenerator(
+                XingchenExpansion.XINGCHEN_GROUP,
+                Items.STARS_GENERATOR,
+                Recipes.getRecipe(Items.STARS_GENERATOR).type,
+                Recipes.getRecipe(Items.STARS_GENERATOR).recipe,
+                (XingchenExpansion) plugin
+        ));
+        registerGenerator(plugin, Items.SOLAR_GENERATOR_L1, new StarsSolarGeneratorL1(
+                XingchenExpansion.XINGCHEN_GROUP,
+                Items.SOLAR_GENERATOR_L1,
+                Recipes.getRecipe(Items.SOLAR_GENERATOR_L1).type,
+                Recipes.getRecipe(Items.SOLAR_GENERATOR_L1).recipe,
+                (XingchenExpansion) plugin
+        ));
+        registerGenerator(plugin, Items.SOLAR_GENERATOR_L2, new StarsSolarGeneratorL2(
+                XingchenExpansion.XINGCHEN_GROUP,
+                Items.SOLAR_GENERATOR_L2,
+                Recipes.getRecipe(Items.SOLAR_GENERATOR_L2).type,
+                Recipes.getRecipe(Items.SOLAR_GENERATOR_L2).recipe,
+                (XingchenExpansion) plugin
+        ));
+        registerGenerator(plugin, Items.SOLAR_GENERATOR_L3, new StarsSolarGeneratorL2(
+                XingchenExpansion.XINGCHEN_GROUP,
+                Items.SOLAR_GENERATOR_L3,
+                Recipes.getRecipe(Items.SOLAR_GENERATOR_L3).type,
+                Recipes.getRecipe(Items.SOLAR_GENERATOR_L3).recipe,
+                (XingchenExpansion) plugin
+        ));
     }
 
+    /**
+     * 注册普通 Slimefun 物品（如材料）
+     * @param plugin 主插件实例
+     * @param item   Slimefun 物品实例
+     * @param id     物品 ID
+     */
     private static void registerItem(JavaPlugin plugin, SlimefunItemStack item, String id) {
-        if (item == null) {
-            plugin.getLogger().warning("Failed to register item: " + id + " is null");
-            return;
-        }
-        Recipes.RecipeEntry recipe = Recipes.getRecipe(item);
-        if (recipe == null) {
-            plugin.getLogger().info("No recipe found for item: " + item.getItemId() + ", skipping registration");
+        if (item == null || Recipes.getRecipe(item) == null) {
+            plugin.getLogger().warning("Invalid item or recipe for: " + id);
             return;
         }
         try {
             new SlimefunItem(
                     XingchenExpansion.XINGCHEN_GROUP,
                     item,
-                    recipe.type,
-                    recipe.recipe,
-                    recipe.output
-            ).register(XingchenExpansion.instance);
-            plugin.getLogger().info("Registered item: " + item.getItemId());
+                    Recipes.getRecipe(item).type,
+                    Recipes.getRecipe(item).recipe,
+                    Recipes.getRecipe(item).output
+            ).register(XingchenExpansion.getInstance());
+            plugin.getLogger().info("Registered item: " + id);
         } catch (Exception e) {
-            plugin.getLogger().severe("Error registering item " + item.getItemId() + ": " + e.getMessage());
+            plugin.getLogger().severe("Error registering item " + id + ": " + e.getMessage());
         }
     }
 
-    private static void registerGenerator(JavaPlugin plugin, SlimefunItemStack item, String id) {
-        if (item == null) {
-            plugin.getLogger().warning("Failed to register generator: " + id + " is null");
-            return;
-        }
-        Recipes.RecipeEntry recipe = Recipes.getRecipe(item);
-        if (recipe == null) {
-            plugin.getLogger().warning("No recipe found for generator: " + item.getItemId());
+    /**
+     * 注册 Slimefun 发电机。
+     *
+     * @param plugin    主插件实例
+     * @param item      Slimefun 物品实例
+     * @param generator 发电机实例
+     */
+    private static void registerGenerator(JavaPlugin plugin, SlimefunItemStack item, SlimefunItem generator) {
+        if (item == null || generator == null) {
+            plugin.getLogger().warning("Invalid item or generator for: " + (item != null ? item.getItemId() : "null"));
             return;
         }
         try {
-            new StarsGenerator(
-                    XingchenExpansion.XINGCHEN_GROUP,
-                    item,
-                    recipe.type,
-                    recipe.recipe,
-                    (XingchenExpansion) plugin
-            ).register(XingchenExpansion.instance);
+            generator.register(XingchenExpansion.getInstance());
             plugin.getLogger().info("Registered generator: " + item.getItemId());
         } catch (Exception e) {
             plugin.getLogger().severe("Error registering generator " + item.getItemId() + ": " + e.getMessage());

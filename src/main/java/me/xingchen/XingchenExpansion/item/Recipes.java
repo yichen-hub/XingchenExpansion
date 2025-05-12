@@ -24,7 +24,7 @@ public class Recipes {
     private static final Map<SlimefunItemStack, RecipeEntry> RECIPES = new HashMap<>();
 
     static {
-        // 星辰原矿: STARS_ORE
+        // 星辰原矿
         RECIPES.put(Items.STARS_ORE, new RecipeEntry(
                 RecipeType.ENHANCED_CRAFTING_TABLE,
                 new ItemStack[]{
@@ -34,27 +34,62 @@ public class Recipes {
                 },
                 Items.STARS_ORE
         ));
-        // 星辰锭: STARS_INGOT
+
+        // 星辰锭
         RECIPES.put(Items.STARS_INGOT, new RecipeEntry(
                 RecipeType.SMELTERY,
                 new ItemStack[]{Items.STARS_ORE},
                 Items.STARS_INGOT
         ));
-        // 星辰结晶: STARS_CRYSTAL
+
+        // 星辰结晶
         RECIPES.put(Items.STARS_CRYSTAL, new RecipeEntry(
                 RecipeType.SMELTERY,
                 new ItemStack[]{Items.STARS_ORE, Items.STARS_INGOT},
                 Items.STARS_CRYSTAL
         ));
-        // 星辰发电机: STARS_GENERATOR
+
+        // 星辰发电机
         RECIPES.put(Items.STARS_GENERATOR, new RecipeEntry(
                 RecipeType.ENHANCED_CRAFTING_TABLE,
                 new ItemStack[]{
-                        Items.STARS_INGOT, Items.STARS_CRYSTAL, Items.STARS_INGOT,
-                        new ItemStack(Material.FURNACE), new ItemStack(Material.REDSTONE_BLOCK), new ItemStack(Material.FURNACE),
-                        Items.STARS_INGOT, Items.STARS_CRYSTAL, Items.STARS_INGOT
+                        Items.STARS_INGOT,              Items.STARS_CRYSTAL,                        Items.STARS_INGOT,
+                        new ItemStack(Material.FURNACE), new ItemStack(Material.REDSTONE_BLOCK),    new ItemStack(Material.FURNACE),
+                        Items.STARS_INGOT,              Items.STARS_CRYSTAL,                        Items.STARS_INGOT
                 },
                 Items.STARS_GENERATOR
+        ));
+
+        // 星辰太阳能发电机Ⅰ
+        RECIPES.put(Items.SOLAR_GENERATOR_L1, new RecipeEntry(
+                RecipeType.ENHANCED_CRAFTING_TABLE,
+                new ItemStack[]{
+                        Items.STARS_INGOT,              new ItemStack(Material.DAYLIGHT_DETECTOR),  Items.STARS_INGOT,
+                        Items.STARS_CRYSTAL,            new ItemStack(Material.REDSTONE_BLOCK),     Items.STARS_CRYSTAL,
+                        Items.STARS_INGOT,              new ItemStack(Material.FURNACE),            Items.STARS_INGOT
+                },
+                Items.SOLAR_GENERATOR_L1
+        ));
+
+        // 星辰太阳能发电机Ⅱ
+        RECIPES.put(Items.SOLAR_GENERATOR_L2, new RecipeEntry(
+                RecipeType.ENHANCED_CRAFTING_TABLE,
+                new ItemStack[]{
+                        Items.STARS_INGOT,              Items.SOLAR_GENERATOR_L1,                   Items.STARS_INGOT,
+                        Items.STARS_CRYSTAL,            new ItemStack(Material.REDSTONE_BLOCK),     Items.STARS_CRYSTAL,
+                        Items.STARS_INGOT,              new ItemStack(Material.FURNACE),            Items.STARS_INGOT
+                },
+                Items.SOLAR_GENERATOR_L2
+        ));
+        //  星辰太阳能发电机Ⅲ
+        RECIPES.put(Items.SOLAR_GENERATOR_L3, new RecipeEntry(
+                RecipeType.ENHANCED_CRAFTING_TABLE,
+                new ItemStack[]{
+                        Items.STARS_INGOT,              Items.SOLAR_GENERATOR_L2,                   Items.STARS_INGOT,
+                        Items.STARS_CRYSTAL,            new ItemStack(Material.REDSTONE_BLOCK),     Items.STARS_CRYSTAL,
+                        Items.STARS_INGOT,              new ItemStack(Material.FURNACE),            Items.STARS_INGOT
+                },
+                Items.SOLAR_GENERATOR_L3
         ));
     }
 
