@@ -1,0 +1,19 @@
+generators:
+  STARS_GENERATOR:
+    energy_capacity: 1000
+fuels:
+  STARS_ORE:
+    energy: 20
+    burn_time: 200  # 燃烧 10 秒（200 ticks）
+    waste:
+      STARS_WASTE: 1
+  STARS_INGOT:
+    energy: 30
+    burn_time: 300  # 燃烧 15 秒
+    waste:
+      STARS_WASTE: 2
+  STARS_CRYSTAL:
+    energy: 50
+    burn_time: 600  # 燃烧 30 秒
+    waste:
+      STARS_WASTE: 3
