@@ -1,0 +1,5 @@
+purifiers:
+  Stars_Purifier_L1:
+    energy_consumption: 50  # 每 tick 耗电量 (J/tick)
+    conversion_time: 6000   # 转化时间 (ticks, 5 分钟 = 6000 ticks)
+    output_amount: 1        # 每次转化产出的星辰源质数量

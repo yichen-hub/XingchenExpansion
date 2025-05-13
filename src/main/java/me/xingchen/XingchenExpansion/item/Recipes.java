@@ -28,9 +28,9 @@ public class Recipes {
         RECIPES.put(Items.STARS_ORE, new RecipeEntry(
                 RecipeType.ENHANCED_CRAFTING_TABLE,
                 new ItemStack[]{
-                        new ItemStack(Material.EMERALD), null, new ItemStack(Material.DIAMOND),
-                        null, null, null,
-                        null, null, null
+                        new ItemStack(Material.EMERALD),null,                                       new ItemStack(Material.DIAMOND),
+                        null,                           null,                                       null,
+                        null,                           null,                                       null
                 },
                 Items.STARS_ORE
         ));
@@ -47,6 +47,18 @@ public class Recipes {
                 RecipeType.SMELTERY,
                 new ItemStack[]{Items.STARS_ORE, Items.STARS_INGOT},
                 Items.STARS_CRYSTAL
+        ));
+        // 星辰废料
+        RECIPES.put(Items.STARS_WASTE, new RecipeEntry(
+                RecipeType.MULTIBLOCK,
+                new ItemStack[]{Items.STARS_INGOT, Items.STARS_GENERATOR},
+                Items.STARS_WASTE
+        ));
+        // 星辰源质
+        RECIPES.put(Items.STARS_SOURCE_QUALITY, new RecipeEntry(
+                RecipeType.MULTIBLOCK,
+                new ItemStack[]{Items.STARS_WASTE, Items.PURIFIER_L1},
+                Items.STARS_SOURCE_QUALITY
         ));
 
         // 星辰发电机
@@ -90,6 +102,16 @@ public class Recipes {
                         Items.STARS_INGOT,              new ItemStack(Material.FURNACE),            Items.STARS_INGOT
                 },
                 Items.SOLAR_GENERATOR_L3
+        ));
+        // 星辰净化器Ⅰ
+        RECIPES.put(Items.PURIFIER_L1, new RecipeEntry(
+                RecipeType.ENHANCED_CRAFTING_TABLE,
+                new ItemStack[]{
+                        Items.STARS_INGOT,              Items.STARS_CRYSTAL,                        Items.STARS_INGOT,
+                        Items.STARS_CRYSTAL,            new ItemStack(Material.SMITHING_TABLE),     Items.STARS_CRYSTAL,
+                        Items.STARS_INGOT,              new ItemStack(Material.REDSTONE_BLOCK),     Items.STARS_INGOT
+                },
+                Items.PURIFIER_L1
         ));
     }
 
