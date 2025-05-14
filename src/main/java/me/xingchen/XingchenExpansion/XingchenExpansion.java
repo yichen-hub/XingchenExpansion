@@ -1,5 +1,6 @@
 package me.xingchen.XingchenExpansion;
 
+import io.github.thebusybiscuit.slimefun4.libraries.dough.config.Config;
 import io.github.thebusybiscuit.slimefun4.libraries.dough.items.CustomItemStack;
 import me.xingchen.XingchenExpansion.item.ItemRegistry;
 import org.bukkit.Material;
@@ -30,6 +31,8 @@ public class XingchenExpansion extends JavaPlugin implements SlimefunAddon {
             e.printStackTrace();
             setEnabled(false);
         }
+        Config config = new Config(this, "purifier.yml");
+
     }
     @Override
     public void onDisable() {

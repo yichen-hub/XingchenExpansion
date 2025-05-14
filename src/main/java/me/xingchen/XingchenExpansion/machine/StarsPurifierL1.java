@@ -7,7 +7,7 @@ import me.xingchen.XingchenExpansion.XingchenExpansion;
 import org.bukkit.inventory.ItemStack;
 
 public class StarsPurifierL1 extends StarsPurifier {
-    public StarsPurifierL1(ItemGroup itemGroup, SlimefunItemStack item, RecipeType recipeType, ItemStack[] recipe, XingchenExpansion plugin) {
-        super(itemGroup, item, recipeType, recipe, plugin, "Stars_Purifier_L1");
+    public StarsPurifierL1(ItemGroup itemGroup, SlimefunItemStack item, RecipeType recipeType, ItemStack[] recipe, XingchenExpansion pluginInstance) {
+        super(itemGroup, item, recipeType, recipe, pluginInstance, "STARS_PURIFIER_L1");
     }
 }

@@ -6,6 +6,7 @@ import me.xingchen.XingchenExpansion.XingchenExpansion;
 import me.xingchen.XingchenExpansion.generator.StarsGenerator;
 import me.xingchen.XingchenExpansion.generator.StarsSolarGeneratorL1;
 import me.xingchen.XingchenExpansion.generator.StarsSolarGeneratorL2;
+import me.xingchen.XingchenExpansion.generator.StarsSolarGeneratorL3;
 import me.xingchen.XingchenExpansion.machine.StarsPurifierL1;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -47,7 +48,7 @@ public class ItemRegistry {
                 Recipes.getRecipe(Items.SOLAR_GENERATOR_L2).recipe,
                 (XingchenExpansion) plugin
         ));
-        registerGenerator(plugin, Items.SOLAR_GENERATOR_L3, new StarsSolarGeneratorL2(
+        registerGenerator(plugin, Items.SOLAR_GENERATOR_L3, new StarsSolarGeneratorL3(
                 XingchenExpansion.XINGCHEN_GROUP,
                 Items.SOLAR_GENERATOR_L3,
                 Recipes.getRecipe(Items.SOLAR_GENERATOR_L3).type,
@@ -55,6 +56,8 @@ public class ItemRegistry {
                 (XingchenExpansion) plugin
         ));
         //注册机器
+
+        //星辰净化器L1
         registerMachine(plugin, Items.PURIFIER_L1, new StarsPurifierL1(
                 XingchenExpansion.XINGCHEN_GROUP,
                 Items.PURIFIER_L1,

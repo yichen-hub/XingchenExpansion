@@ -7,7 +7,7 @@ generators:
     energy_capacity: 2000
     day_energy: 45
     night_energy: 25
-    StarsSolarGeneratorL3:
-      energy_capacity: 2000
-      day_energy: 100
-      night_energy: 50
+  StarsSolarGeneratorL3:
+    energy_capacity: 2000
+    day_energy: 100
+    night_energy: 50
