@@ -5,8 +5,7 @@ import io.github.thebusybiscuit.slimefun4.api.recipes.RecipeType;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class Recipes {
     public static class RecipeEntry {
@@ -21,11 +20,20 @@ public class Recipes {
         }
     }
 
-    private static final Map<SlimefunItemStack, RecipeEntry> RECIPES = new HashMap<>();
+    // 改成 List<RecipeEntry>
+    private static final Map<SlimefunItemStack, List<RecipeEntry>> RECIPES = new HashMap<>();
+
+    // 新增方法，支持多配方
+    public static void addRecipe(SlimefunItemStack output, RecipeEntry entry) {
+        RECIPES.computeIfAbsent(output, k -> new ArrayList<>()).add(entry);
+    }
 
     static {
+
+        //物品
+
         // 星辰原矿
-        RECIPES.put(Items.STARS_ORE, new RecipeEntry(
+        addRecipe(Items.STARS_ORE, new RecipeEntry(
                 RecipeType.ENHANCED_CRAFTING_TABLE,
                 new ItemStack[]{
                         new ItemStack(Material.EMERALD),null,                                       new ItemStack(Material.DIAMOND),
@@ -36,33 +44,99 @@ public class Recipes {
         ));
 
         // 星辰锭
-        RECIPES.put(Items.STARS_INGOT, new RecipeEntry(
+        addRecipe(Items.STARS_INGOT, new RecipeEntry(
                 RecipeType.SMELTERY,
                 new ItemStack[]{Items.STARS_ORE},
                 Items.STARS_INGOT
         ));
 
         // 星辰结晶
-        RECIPES.put(Items.STARS_CRYSTAL, new RecipeEntry(
+        addRecipe(Items.STARS_CRYSTAL, new RecipeEntry(
                 RecipeType.SMELTERY,
                 new ItemStack[]{Items.STARS_ORE, Items.STARS_INGOT},
                 Items.STARS_CRYSTAL
         ));
+
         // 星辰废料
-        RECIPES.put(Items.STARS_WASTE, new RecipeEntry(
-                RecipeType.MULTIBLOCK,
-                new ItemStack[]{Items.STARS_INGOT, Items.STARS_GENERATOR},
+        addRecipe(Items.STARS_WASTE, new RecipeEntry(
+                XingchenExpansionRecipeTypes.STARS_GENERATOR,
+                new ItemStack[]{Items.STARS_INGOT},
                 Items.STARS_WASTE
         ));
+        addRecipe(Items.STARS_WASTE, new RecipeEntry(
+                XingchenExpansionRecipeTypes.STARS_GENERATOR,
+                new ItemStack[]{Items.STARS_ORE},
+                Items.STARS_WASTE
+        ));
+        addRecipe(Items.STARS_WASTE, new RecipeEntry(
+                XingchenExpansionRecipeTypes.STARS_GENERATOR,
+                new ItemStack[]{Items.STARS_CRYSTAL},
+                Items.STARS_WASTE
+        ));
+
         // 星辰源质
-        RECIPES.put(Items.STARS_SOURCE_QUALITY, new RecipeEntry(
+        addRecipe(Items.STARS_SOURCE_QUALITY, new RecipeEntry(
                 RecipeType.MULTIBLOCK,
                 new ItemStack[]{Items.STARS_WASTE, Items.PURIFIER_L1},
                 Items.STARS_SOURCE_QUALITY
         ));
+        //普通锻造石
+            addRecipe(Items.FORGE_STONE, new RecipeEntry(
+                RecipeType.ENHANCED_CRAFTING_TABLE,
+                new ItemStack[]{
+                        Items.STARS_INGOT,              Items.STARS_CRYSTAL,                        Items.STARS_INGOT,
+                        Items.STARS_CRYSTAL,            new ItemStack(Material.EMERALD),            Items.STARS_CRYSTAL,
+                        Items.STARS_INGOT,              Items.STARS_CRYSTAL,                        Items.STARS_INGOT
+                },
+                Items.FORGE_STONE
+        ));
+        //高级锻造石
+            addRecipe(Items.FORGE_STONE_PLUS, new RecipeEntry(
+                RecipeType.ENHANCED_CRAFTING_TABLE,
+                new ItemStack[]{
+                        Items.STARS_INGOT,              Items.STARS_CRYSTAL,                        Items.STARS_INGOT,
+                        Items.STARS_CRYSTAL,            new ItemStack(Material.DIAMOND),            Items.STARS_CRYSTAL,
+                        Items.STARS_INGOT,              Items.STARS_CRYSTAL,                         Items.STARS_INGOT
+                },
+                Items.FORGE_STONE_PLUS
+        ));
+        //锻造护符
+        addRecipe(Items.FORGE_TALISMAN, new RecipeEntry(
+                RecipeType.ENHANCED_CRAFTING_TABLE,
+                new ItemStack[]{
+                        Items.STARS_INGOT,              Items.STARS_CRYSTAL,                        Items.STARS_INGOT,
+                        Items.STARS_CRYSTAL,            new ItemStack(Material.NETHERITE_INGOT),    Items.STARS_CRYSTAL,
+                        Items.STARS_INGOT,              Items.STARS_CRYSTAL,                         Items.STARS_INGOT
+                },
+                Items.FORGE_TALISMAN
+        ));
+
+
+        //  流形
+        addRecipe(Items.MANIFOLD, new RecipeEntry(
+                RecipeType.ENHANCED_CRAFTING_TABLE,
+                new ItemStack[]{
+                        Items.STARS_INGOT,              Items.STARS_CRYSTAL,                        Items.STARS_INGOT,
+                        Items.STARS_CRYSTAL,            new ItemStack(Material.SHIELD),             Items.STARS_CRYSTAL,
+                        Items.STARS_INGOT,              Items.STARS_CRYSTAL,                        Items.STARS_INGOT
+                },
+                Items.MANIFOLD
+        ));
+        // 编织
+        addRecipe(Items.WEAVING, new RecipeEntry(
+                RecipeType.ENHANCED_CRAFTING_TABLE,
+                new ItemStack[]{
+                        Items.STARS_INGOT,              Items.STARS_CRYSTAL,                        Items.STARS_INGOT,
+                        Items.STARS_CRYSTAL,            new ItemStack(Material.SHIELD),             Items.STARS_CRYSTAL,
+                        Items.STARS_INGOT,              Items.STARS_CRYSTAL,                        Items.STARS_INGOT
+                },
+                Items.WEAVING
+        ));
+
+        //发电机
 
         // 星辰发电机
-        RECIPES.put(Items.STARS_GENERATOR, new RecipeEntry(
+        addRecipe(Items.STARS_GENERATOR, new RecipeEntry(
                 RecipeType.ENHANCED_CRAFTING_TABLE,
                 new ItemStack[]{
                         Items.STARS_INGOT,              Items.STARS_CRYSTAL,                        Items.STARS_INGOT,
@@ -73,7 +147,7 @@ public class Recipes {
         ));
 
         // 星辰太阳能发电机Ⅰ
-        RECIPES.put(Items.SOLAR_GENERATOR_L1, new RecipeEntry(
+        addRecipe(Items.SOLAR_GENERATOR_L1, new RecipeEntry(
                 RecipeType.ENHANCED_CRAFTING_TABLE,
                 new ItemStack[]{
                         Items.STARS_INGOT,              new ItemStack(Material.DAYLIGHT_DETECTOR),  Items.STARS_INGOT,
@@ -84,7 +158,7 @@ public class Recipes {
         ));
 
         // 星辰太阳能发电机Ⅱ
-        RECIPES.put(Items.SOLAR_GENERATOR_L2, new RecipeEntry(
+        addRecipe(Items.SOLAR_GENERATOR_L2, new RecipeEntry(
                 RecipeType.ENHANCED_CRAFTING_TABLE,
                 new ItemStack[]{
                         Items.STARS_INGOT,              Items.SOLAR_GENERATOR_L1,                   Items.STARS_INGOT,
@@ -94,7 +168,7 @@ public class Recipes {
                 Items.SOLAR_GENERATOR_L2
         ));
         //  星辰太阳能发电机Ⅲ
-        RECIPES.put(Items.SOLAR_GENERATOR_L3, new RecipeEntry(
+        addRecipe(Items.SOLAR_GENERATOR_L3, new RecipeEntry(
                 RecipeType.ENHANCED_CRAFTING_TABLE,
                 new ItemStack[]{
                         Items.STARS_INGOT,              Items.SOLAR_GENERATOR_L2,                   Items.STARS_INGOT,
@@ -103,8 +177,11 @@ public class Recipes {
                 },
                 Items.SOLAR_GENERATOR_L3
         ));
+
+        //机器
+
         // 星辰净化器Ⅰ
-        RECIPES.put(Items.PURIFIER_L1, new RecipeEntry(
+        addRecipe(Items.PURIFIER_L1, new RecipeEntry(
                 RecipeType.ENHANCED_CRAFTING_TABLE,
                 new ItemStack[]{
                         Items.STARS_INGOT,              Items.STARS_CRYSTAL,                        Items.STARS_INGOT,
@@ -115,7 +192,11 @@ public class Recipes {
         ));
     }
 
-    public static RecipeEntry getRecipe(SlimefunItemStack item) {
-        return RECIPES.get(item);
+    public static List<RecipeEntry> getRecipes(SlimefunItemStack item) {
+        return RECIPES.getOrDefault(item, Collections.emptyList());
+    }
+    public static RecipeEntry getFirstRecipe(SlimefunItemStack item) {
+        List<RecipeEntry> list = getRecipes(item);
+        return (list != null && !list.isEmpty()) ? list.get(0) : null;
     }
 }
