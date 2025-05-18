@@ -1,0 +1,31 @@
+generators:
+  STARS_GENERATOR_L1:
+    energy_capacity: 1000
+    fuels:
+      STARS_ORE:
+        energy_per_tick: 50
+        burn_time: 60
+        waste_amount: 1
+      STARS_INGOT:
+        energy_per_tick: 75
+        burn_time: 40
+        waste_amount: 2
+      STARS_CRYSTAL:
+        energy_per_tick: 95
+        burn_time: 800
+        waste_amount: 3
+  STARS_GENERATOR_L2:
+    energy_capacity: 2000
+    fuels:
+      STARS_ORE:
+        energy_per_tick: 85
+        burn_time: 50
+        waste_amount: 2
+      STARS_INGOT:
+        energy_per_tick: 130
+        burn_time: 40
+        waste_amount: 3
+      STARS_CRYSTAL:
+        energy_per_tick: 145
+        burn_time: 30
+        waste_amount: 4

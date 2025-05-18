@@ -28,8 +28,8 @@ public class SpecialItemListener implements Listener {
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
 
         // 注册物品
-        specialItems.put("MANIFOLD", new SpecialItem("MANIFOLD", 15 * 60 * 20L)); // 15 分钟 Buff
-        specialItems.put("WEAVING", new SpecialItem("WEAVING", 15 * 60 * 20L));
+        specialItems.put("MANIFOLD", new SpecialItem("MANIFOLD", 60 * 60 * 20L)); // 15 分钟 Buff
+        specialItems.put("WEAVING", new SpecialItem("WEAVING", 60 * 60 * 20L));
     }
 
     @EventHandler

@@ -1,0 +1,11 @@
+quarries:
+  STARS_QUARRY_L1:
+    energy_consumption: 25
+    processing_time: 60  # 30秒
+    output_id: STARS_ORE
+    output_amount: 1
+  STARS_QUARRY_L2:
+    energy_consumption: 50
+    processing_time: 30  # 15秒
+    output_id: STARS_ORE
+    output_amount: 1

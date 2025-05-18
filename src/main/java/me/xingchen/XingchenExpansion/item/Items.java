@@ -12,28 +12,32 @@ public class Items {
             "STARS_ORE",
             Material.AMETHYST_SHARD,
             "&3星辰原矿",
-            "&7蕴含星辰之力"
+            "&7粉碎紫水晶碎片获取",
+            "&7蕴含微量星辰能量"
     );
     //星辰锭
     public static final SlimefunItemStack STARS_INGOT = new SlimefunItemStack(
             "STARS_INGOT",
             Material.IRON_INGOT,
             "&5星辰锭",
-            "&7星辰矿石精炼产物"
+            "&7星辰原矿精炼后的产物" ,
+            "蕴含少量星辰能量"
     );
     //星辰水晶
     public static final SlimefunItemStack STARS_CRYSTAL = new SlimefunItemStack(
             "STARS_CRYSTAL",
             Material.PRISMARINE_CRYSTALS,
             "&6星辰水晶",
-            "&7散发微弱光芒"
+            "&7星辰材料进一步提炼的产物" ,
+            "&7蕴含大量星辰能量"
     );
     //星辰废料
     public static final SlimefunItemStack STARS_WASTE = new SlimefunItemStack(
             "STARS_WASTE",
             Material.GUNPOWDER,
             "&7星辰废料",
-            "&7星辰发电机的副产物"
+            "&7星辰衰变后的产物",
+            "&7由星辰发电机发电时产出"
 
     );
     //星辰源质
@@ -41,7 +45,8 @@ public class Items {
             "STARS_SOURCE_QUALITY",
             Material.NETHER_STAR,
             "&6星辰源质",
-            "&7提炼后的星辰材料",
+            "&7灰烬中重生",
+            "&7蕴含极高浓度的星辰能量",
             "&7由星辰废料在星辰净化器净化获得"
     );
     //锻造石
@@ -88,15 +93,24 @@ public class Items {
     //发电机
 
     //星辰发电机
-    public static final SlimefunItemStack STARS_GENERATOR = new SlimefunItemStack(
-            "STARS_GENERATOR",
+    public static final SlimefunItemStack STARS_GENERATOR_L1 = new SlimefunItemStack(
+            "STARS_GENERATOR_L1",
             Material.AMETHYST_BLOCK,
-            "&6星辰发电机",
+            "&6星辰发电机 &4 I",
             "&7使用星辰材料发电",
             "&7星辰原矿:&620j&7 /tick--发电时长&6 10秒",
             "&7星辰锭:&630j&7 /tick--发电时长&6 30秒",
             "&7星辰水晶:&650j&7 /tick--发电时长&6 60秒",
             "&7副产物: 星辰废料"
+    );
+    public static final SlimefunItemStack STARS_GENERATOR_L2 = new SlimefunItemStack(
+            "STARS_GENERATOR_L2",
+            Material.AMETHYST_BLOCK,
+            "&6星辰发电机 &4 II",
+            "&7使用星辰材料发电",
+            "&7星辰原矿:&620j&7 /tick--发电时长&6 15秒",
+            "&7星辰锭:&630j&7 /tick--发电时长&6 45秒",
+            "&7星辰水晶:&650j&7 /tick--发电时长&6 90秒"
     );
 
     //星辰太阳能发电机L1
@@ -126,7 +140,7 @@ public class Items {
 
     //机器
 
-    //星辰净化器
+    //星辰净化装置L2
     public static final SlimefunItemStack PURIFIER_L1 = new SlimefunItemStack(
             "STARS_PURIFIER_L1",
             Material.QUARTZ_BLOCK,
@@ -134,5 +148,32 @@ public class Items {
             "&7将星辰废料转化为星辰源质",
             "&7耗电: &650J&7/tick",
             "&7转化时间: &65&7 分钟"
+    );
+    //星辰净化装置L2
+    public static final SlimefunItemStack PURIFIER_L2 = new SlimefunItemStack(
+            "STARS_PURIFIER_L2",
+            Material.QUARTZ_BLOCK,
+            "&6星辰净化装置 &4II",
+            "&7将星辰废料转化为星辰源质",
+            "&7耗电: &650J&7/tick",
+            "&7转化时间: &65&7 分钟"
+    );
+    //星辰矿机L1
+    public static final SlimefunItemStack STARS_QUARRY_L1 = new SlimefunItemStack(
+            "STARS_QUARRY_L1",
+            Material.IRON_BLOCK,
+            "&6星辰矿机 &4I",
+            "&7自动产出星辰矿",
+            "&7耗电: &625J&7/tick",
+            "&7生产时间: &630&7 秒/个"
+    );
+    //星辰矿机L2
+    public static final SlimefunItemStack STARS_QUARRY_L2 = new SlimefunItemStack(
+            "STARS_QUARRY_L2",
+            Material.IRON_BLOCK,
+            "&6星辰矿机 &4II",
+            "&7自动产出星辰矿",
+            "&7耗电: &650J&7/tick",
+            "&7生产时间: &615&7 秒/个"
     );
 }

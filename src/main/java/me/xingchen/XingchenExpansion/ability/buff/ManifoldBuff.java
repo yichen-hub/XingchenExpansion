@@ -1,5 +1,6 @@
-package me.xingchen.XingchenExpansion.ability;
+package me.xingchen.XingchenExpansion.ability.buff;
 
+import me.xingchen.XingchenExpansion.ability.BuffManager;
 import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Particle;

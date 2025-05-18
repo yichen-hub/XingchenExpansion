@@ -20,21 +20,12 @@ import java.util.function.Predicate;
 public class Util {
     private static final NamespacedKey SLIMEFUN_KEY = new NamespacedKey("slimefun", "slimefun_item");
 
-    //获取物品的 Slimefun ID。
     @Nullable
     public static String getSlimefunId(@Nullable ItemStack item) {
         if (item == null || !item.hasItemMeta()) return null;
         PersistentDataContainer pdc = item.getItemMeta().getPersistentDataContainer();
         return pdc.get(SLIMEFUN_KEY, PersistentDataType.STRING);
     }
-    /* 保护输出槽，处理 InventoryClickEvent 和 InventoryDragEvent，阻止非法存入。
-     * @param event        库存事件（InventoryClickEvent 或 InventoryDragEvent）
-     * @param plugin       插件实例，用于调度任务和日志
-     * @param outputSlots  输出槽位（int 或 int[]）
-     * @param validOutputId 有效输出物品的 Slimefun ID（可为 null，表示无限制）
-     * @param isValidMenu  判断菜单是否为目标机器的 Predicate
-     * @return 是否处理了事件（true 表示事件已处理，需取消默认行为）
-     * @throws IllegalArgumentException 如果事件类型不支持*/
     public static boolean protectOutputSlots(@Nonnull InventoryEvent event, @Nonnull JavaPlugin plugin,
                                              @Nonnull Object outputSlots, @Nullable String validOutputId,
                                              @Nonnull Predicate<BlockMenu> isValidMenu) {
@@ -51,12 +42,10 @@ public class Util {
             Inventory clickedInventory = clickEvent.getClickedInventory();
             boolean isBlockMenu = clickedInventory != null && clickedInventory.equals(menu.toInventory());
 
-            // 检查是否为输出槽
             if (!isBlockMenu || !Arrays.stream(slots).anyMatch(s -> s == rawSlot)) {
                 return false;
             }
 
-            // 处理点击交互
             ItemStack cursor = clickEvent.getCursor();
             boolean isInsert = (cursor != null && cursor.getType() != Material.AIR) ||
                     (click == ClickType.SHIFT_LEFT && clickEvent.getAction() == InventoryAction.MOVE_TO_OTHER_INVENTORY) ||
@@ -75,10 +64,8 @@ public class Util {
                         player.getInventory().setItem(clickEvent.getHotbarButton(), null);
                     }
                     player.sendMessage("§c输出槽不支持存入！");
-                    plugin.getLogger().info("阻止存入输出槽: 物品=" + item.getType() + ", 槽位=" + rawSlot);
                 }
 
-                // 延迟检查输出槽中的非法物品
                 plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
                     for (int outputSlot : slots) {
                         ItemStack outputItem = menu.getItemInSlot(outputSlot);
@@ -87,7 +74,6 @@ public class Util {
                             returnItem(player, outputItem.clone());
                             menu.replaceExistingItem(outputSlot, null);
                             player.sendMessage("§c输出槽不支持存入！");
-                            plugin.getLogger().info("延迟检查移除非法物品: 输出槽=" + outputSlot + ", 物品=" + outputItem.getType());
                         }
                     }
                 }, 2L);
@@ -100,7 +86,6 @@ public class Util {
             }
             return false;
         } else if (event instanceof InventoryDragEvent dragEvent) {
-            // 检查是否涉及输出槽
             if (dragEvent.getRawSlots().stream().noneMatch(slot -> Arrays.stream(slots).anyMatch(s -> s == slot))) {
                 return false;
             }
@@ -111,7 +96,6 @@ public class Util {
                 returnItem(player, cursor.clone());
                 dragEvent.setCursor(null);
                 player.sendMessage("§c输出槽不支持存入！");
-                plugin.getLogger().info("阻止拖拽存入输出槽: 物品=" + cursor.getType());
             }
             return true;
         } else {
@@ -119,13 +103,6 @@ public class Util {
         }
     }
 
-    /**
-     * 规范化输出槽位参数，转换为 int[]。
-     *
-     * @param outputSlots 输出槽位（int 或 int[]）
-     * @return 规范化后的槽位数组
-     * @throws IllegalArgumentException 如果参数类型无效
-     */
     private static int[] normalizeSlots(@Nonnull Object outputSlots) {
         if (outputSlots instanceof Integer) {
             return new int[]{(Integer) outputSlots};
@@ -135,14 +112,6 @@ public class Util {
             throw new IllegalArgumentException("outputSlots 必须是 int 或 int[] 类型");
         }
     }
-
-    /**
-     * 检查物品是否为有效输出物品。
-     *
-     * @param item         物品
-     * @param validOutputId 有效输出物品的 Slimefun ID（可为 null，表示无限制）
-     * @return 是否为有效输出物品
-     */
     private static boolean isValidOutput(@Nullable ItemStack item, @Nullable String validOutputId) {
         if (item == null || !item.hasItemMeta()) return false;
         if (validOutputId == null) return true;
@@ -151,12 +120,6 @@ public class Util {
         return slimefunId != null && slimefunId.equals(validOutputId);
     }
 
-    /**
-     * 将物品返回给玩家背包，若背包满则掉落在玩家位置。
-     *
-     * @param player 玩家
-     * @param item   物品
-     */
     private static void returnItem(@Nonnull Player player, @Nonnull ItemStack item) {
         HashMap<Integer, ItemStack> unadded = player.getInventory().addItem(item);
         if (!unadded.isEmpty()) {

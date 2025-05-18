@@ -1,4 +1,4 @@
-package me.xingchen.XingchenExpansion.generator;
+package me.xingchen.XingchenExpansion.generator.abstractGenerator;
 
 import io.github.thebusybiscuit.slimefun4.api.events.PlayerRightClickEvent;
 import io.github.thebusybiscuit.slimefun4.api.items.ItemGroup;
@@ -46,22 +46,22 @@ public abstract class StarsSolarGenerator extends SlimefunItem implements Energy
         this.generatorId = generatorId;
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
 
-        File file = new File(plugin.getDataFolder(), "solar_generator.yml");
-        if (!file.exists()) plugin.saveResource("solar_generator.yml", false);
-        YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
+        File configFile = new File(plugin.getDataFolder(), "solar_generator.yml");
+        if (!configFile.exists()) {plugin.saveResource("solar_generator.yml", false);}
+        YamlConfiguration config = YamlConfiguration.loadConfiguration(configFile);
 
-        var generatorSection = config.getConfigurationSection("generators." + generatorId);
-        if (generatorSection == null) {
-            plugin.getLogger().severe("未找到 generators." + generatorId + " 配置，发电机禁用！");
+        var section = config.getConfigurationSection("generators." + generatorId);
+        if (section == null) {
+            plugin.getLogger().severe("未找到 generators." + generatorId + " 的配置，发电机将被禁用！");
             this.energyCapacity = 0;
             this.dayEnergy = 0;
             this.nightEnergy = 0;
             disable();
             return;
         }
-        this.energyCapacity = generatorSection.getInt("energy_capacity");
-        this.dayEnergy = generatorSection.getInt("day_energy");
-        this.nightEnergy = generatorSection.getInt("night_energy");
+        this.energyCapacity = section.getInt("energy_capacity");
+        this.dayEnergy = section.getInt("day_energy");
+        this.nightEnergy = section.getInt("night_energy");
 
         if (energyCapacity <= 0 || dayEnergy <= 0 || nightEnergy <= 0) {
             plugin.getLogger().severe("无效的发电量配置，发电机禁用！ID: " + generatorId);

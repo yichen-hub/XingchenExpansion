@@ -75,6 +75,7 @@ public class ConversionUtil {
         @Nullable public String getRuleId() { return ruleId; }
         public int getCurrentTicks() { return currentTicks; }
         public int getTotalTicks() { return totalTicks; }
+
         public double getProgressPercentage() {
             return totalTicks > 0 ? (1.0 - (double) currentTicks / totalTicks) * 100 : 0;
         }
@@ -96,6 +97,7 @@ public class ConversionUtil {
         boolean process(@Nonnull BlockMenu menu, @Nonnull Location location, @Nonnull JavaPlugin plugin,
                         @Nonnull int[] inputSlots, @Nonnull int[] outputSlots);
         @Nonnull ProgressInfo getProgressInfo(@Nonnull Location location, @Nonnull JavaPlugin plugin);
+        @Nonnull List<ConversionRule> getRules();
     }
 
     // 单例输入处理器
@@ -107,6 +109,10 @@ public class ConversionUtil {
             this.rules = rules;
             this.ruleMap = rules.stream().collect(Collectors.toMap(ConversionRule::getRuleId, r -> r));
         }
+
+        @Override
+        @Nonnull
+        public List<ConversionRule> getRules() {return rules;}
 
         @Override
         public boolean process(@Nonnull BlockMenu menu, @Nonnull Location location, @Nonnull JavaPlugin plugin,
@@ -203,6 +209,10 @@ public class ConversionUtil {
             this.rules = rules;
             this.ruleMap = rules.stream().collect(Collectors.toMap(ConversionRule::getRuleId, r -> r));
         }
+
+        @Override
+        @Nonnull
+        public List<ConversionRule> getRules() {return rules;}
 
         @Override
         public boolean process(@Nonnull BlockMenu menu, @Nonnull Location location, @Nonnull JavaPlugin plugin,
@@ -308,6 +318,12 @@ public class ConversionUtil {
         public NoInputProcessor(@Nonnull List<ConversionRule> rules) {
             this.rules = rules;
             this.ruleMap = rules.stream().collect(Collectors.toMap(ConversionRule::getRuleId, r -> r));
+        }
+
+        @Override
+        @Nonnull
+        public List<ConversionRule> getRules() {
+            return rules;
         }
 
         @Override
