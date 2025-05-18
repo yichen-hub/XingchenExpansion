@@ -13,6 +13,7 @@ import io.github.thebusybiscuit.slimefun4.core.networks.energy.EnergyNetComponen
 import io.github.thebusybiscuit.slimefun4.implementation.Slimefun;
 import io.github.thebusybiscuit.slimefun4.libraries.dough.items.CustomItemStack;
 import me.mrCookieSlime.CSCoreLibPlugin.Configuration.Config;
+import me.mrCookieSlime.Slimefun.Objects.handlers.BlockTicker;
 import me.mrCookieSlime.Slimefun.api.BlockStorage;
 import me.mrCookieSlime.Slimefun.api.inventory.BlockMenu;
 import me.mrCookieSlime.Slimefun.api.inventory.BlockMenuPreset;
@@ -49,10 +50,10 @@ public abstract class StarsGenerator extends SlimefunItem implements EnergyNetPr
     protected final int energyCapacity;
     protected final JavaPlugin plugin;
     protected final String generatorId;
-    protected final ConversionUtil.ConversionProcessor processor;
     protected final Set<Location> generatorLocations = ConcurrentHashMap.newKeySet();
     protected final Map<String, FuelConfig> fuels;
-    protected final List<ConversionUtil.ConversionRule> rules;
+    protected final Map<String, ConversionUtil.SingleInputProcessor> processors;
+    protected final Map<String, ConversionUtil.ConversionRule> rules;
 
     protected static class FuelConfig {
         final int energyPerTick;
@@ -84,9 +85,9 @@ public abstract class StarsGenerator extends SlimefunItem implements EnergyNetPr
             plugin.getLogger().severe("未找到 generators." + generatorId + " 的配置，发电机将被禁用！");
             this.energyCapacity = 0;
             this.preset = null;
-            this.processor = null;
             this.fuels = new HashMap<>();
-            this.rules = new ArrayList<>();
+            this.processors = new HashMap<>();
+            this.rules = new HashMap<>();
             disable();
             return;
         }
@@ -97,15 +98,16 @@ public abstract class StarsGenerator extends SlimefunItem implements EnergyNetPr
             plugin.getLogger().severe("未找到 fuels 配置，发电机将被禁用！");
             this.energyCapacity = 0;
             this.preset = null;
-            this.processor = null;
             this.fuels = new HashMap<>();
-            this.rules = new ArrayList<>();
+            this.processors = new HashMap<>();
+            this.rules = new HashMap<>();
             disable();
             return;
         }
 
-        List<ConversionUtil.ConversionRule> rules = new ArrayList<>();
+        Map<String, ConversionUtil.SingleInputProcessor> processors = new HashMap<>();
         Map<String, FuelConfig> fuels = new HashMap<>();
+        Map<String, ConversionUtil.ConversionRule> rules = new HashMap<>();
         for (String fuelId : fuelsSection.getKeys(false)) {
             int energy = fuelsSection.getInt(fuelId + ".energy_per_tick", 0);
             int burnTime = fuelsSection.getInt(fuelId + ".burn_time", 0);
@@ -120,25 +122,26 @@ public abstract class StarsGenerator extends SlimefunItem implements EnergyNetPr
                         wasteAmount > 0 ? ConversionUtil.OutputMode.ALL : ConversionUtil.OutputMode.NONE,
                         burnTime
                 );
-                rules.add(rule);
+                rules.put(fuelId, rule);
+                processors.put(fuelId, new ConversionUtil.SingleInputProcessor(List.of(rule)));
             }
         }
 
-        if (rules.isEmpty()) {
+        if (processors.isEmpty()) {
             plugin.getLogger().severe("未加载任何有效燃料配置，发电机将被禁用！");
             this.energyCapacity = 0;
             this.preset = null;
-            this.processor = null;
             this.fuels = new HashMap<>();
-            this.rules = new ArrayList<>();
+            this.processors = new HashMap<>();
+            this.rules = new HashMap<>();
             disable();
             return;
         }
 
         this.energyCapacity = energyCapacity;
         this.fuels = fuels;
+        this.processors = processors;
         this.rules = rules;
-        this.processor = new ConversionUtil.SingleInputProcessor(rules);
 
         this.preset = new BlockMenuPreset(getId(), item.getDisplayName()) {
             @Override
@@ -172,6 +175,17 @@ public abstract class StarsGenerator extends SlimefunItem implements EnergyNetPr
         };
 
         addItemHandler(
+                new BlockTicker() {
+                    @Override
+                    public void tick(Block b, SlimefunItem sf, Config data) {
+                        StarsGenerator.this.tick(b);
+                    }
+
+                    @Override
+                    public boolean isSynchronized() {
+                        return true;
+                    }
+                },
                 new BlockPlaceHandler(false) {
                     @Override
                     public void onPlayerPlace(BlockPlaceEvent event) {
@@ -198,14 +212,12 @@ public abstract class StarsGenerator extends SlimefunItem implements EnergyNetPr
         plugin.getLogger().info("注册发电机: " + generatorId);
     }
 
-    public BlockMenuPreset getPreset() {
-        return preset;
+    protected void tick(Block b) {
+        if (preset == null || processors.isEmpty()) return;
+        process(b.getLocation());
     }
 
-    @Override
-    public int getGeneratedOutput(@Nonnull Location location, @Nonnull Config data) {
-        if (preset == null || processor == null) return 0;
-
+    protected void process(@Nonnull Location location) {
         BlockMenu menu = BlockStorage.getInventory(location.getBlock());
         if (menu == null) {
             try {
@@ -215,26 +227,124 @@ public abstract class StarsGenerator extends SlimefunItem implements EnergyNetPr
                 generatorLocations.add(location.clone());
             } catch (IllegalStateException e) {
                 plugin.getLogger().warning("无法初始化 BlockStorage: 位置=" + location + ", 错误=" + e.getMessage());
-                return 0;
+                return;
             }
         }
 
+        ItemStack inputItem = menu.getItemInSlot(INPUT_SLOT);
+        String fuelId = Util.getSlimefunId(inputItem);
+        ConversionUtil.SingleInputProcessor processor = fuelId != null ? processors.get(fuelId) : null;
+
+        // 清理无效状态
+        String currentRuleId = BlockStorage.getLocationInfo(location, "rule_id");
+        if (currentRuleId != null && processor != null) {
+            ConversionUtil.ConversionRule rule = rules.get(fuelId);
+            if (!currentRuleId.equals(rule.getRuleId())) {
+                plugin.getLogger().info("输入物品变化，清理旧状态: location=" + location + ", oldRuleId=" + currentRuleId + ", newFuelId=" + fuelId);
+                BlockStorage.addBlockInfo(location, "rule_id", null);
+                BlockStorage.addBlockInfo(location, "processing_time_" + currentRuleId, null);
+                BlockStorage.addBlockInfo(location, "energy_per_tick", null);
+            }
+        }
+
+        if (processor == null) {
+            if (currentRuleId != null) {
+                BlockStorage.addBlockInfo(location, "rule_id", null);
+                BlockStorage.addBlockInfo(location, "processing_time_" + currentRuleId, null);
+                BlockStorage.addBlockInfo(location, "energy_per_tick", null);
+            }
+            updateStatus(menu);
+            return;
+        }
+
+        // 检查输出槽是否允许转化
+        ConversionUtil.ConversionRule rule = rules.get(fuelId);
+        boolean canOutput = processor.canOutput(menu, OUTPUT_SLOTS, rule, plugin, location);
         ConversionUtil.ProgressInfo progress = processor.getProgressInfo(location, plugin);
-        if (progress.isProcessing()) {
-            String ruleId = progress.getRuleId();
-            for (ConversionUtil.ConversionRule rule : rules) {
-                if (rule.getRuleId().equals(ruleId)) {
-                    String fuelId = rule.getInputItems().get(0);
-                    FuelConfig config = fuels.get(fuelId);
-                    updateStatus(menu);
-                    return config != null ? config.energyPerTick : 0;
-                }
-            }
+
+        if (!canOutput && progress.isProcessing()) {
+            // 输出槽满，暂停转化
+            String timeKey = "processing_time_" + currentRuleId;
+            BlockStorage.addBlockInfo(location, timeKey, "1");
+            BlockStorage.addBlockInfo(location, "energy_per_tick", null);
+            updateStatus(menu);
+            return;
         }
 
+        // 执行转化
         boolean processed = processor.process(menu, location, plugin, new int[]{INPUT_SLOT}, OUTPUT_SLOTS);
+        if (processed || progress.isProcessing()) {
+            FuelConfig config = fuels.get(fuelId);
+            if (config != null && canOutput) {
+                BlockStorage.addBlockInfo(location, "energy_per_tick", String.valueOf(config.energyPerTick));
+            } else {
+                BlockStorage.addBlockInfo(location, "energy_per_tick", null);
+            }
+        } else {
+            BlockStorage.addBlockInfo(location, "energy_per_tick", null);
+        }
         updateStatus(menu);
-        return processed ? getCurrentFuelEnergy(menu) : 0;
+    }
+
+    @Override
+    public int getGeneratedOutput(@Nonnull Location location, @Nonnull Config data) {
+        if (preset == null || processors.isEmpty()) return 0;
+
+        BlockMenu menu = BlockStorage.getInventory(location.getBlock());
+        if (menu == null) return 0;
+
+        ItemStack inputItem = menu.getItemInSlot(INPUT_SLOT);
+        String fuelId = Util.getSlimefunId(inputItem);
+        ConversionUtil.SingleInputProcessor processor = fuelId != null ? processors.get(fuelId) : null;
+        if (processor == null) return 0;
+
+        ConversionUtil.ConversionRule rule = rules.get(fuelId);
+        boolean canOutput = processor.canOutput(menu, OUTPUT_SLOTS, rule, plugin, location);
+        ConversionUtil.ProgressInfo progress = processor.getProgressInfo(location, plugin);
+
+        if (!progress.isProcessing() || !canOutput) {
+            return 0;
+        }
+
+        String energyStr = BlockStorage.getLocationInfo(location, "energy_per_tick");
+        try {
+            return energyStr != null ? Integer.parseInt(energyStr) : 0;
+        } catch (NumberFormatException e) {
+            plugin.getLogger().warning("能量格式错误: 值=" + energyStr + ", 位置=" + location);
+            return 0;
+        }
+    }
+
+    protected void updateStatus(BlockMenu menu) {
+        ItemStack inputItem = menu.getItemInSlot(INPUT_SLOT);
+        Location location = menu.getLocation();
+        String fuelId = Util.getSlimefunId(inputItem);
+        ConversionUtil.SingleInputProcessor processor = fuelId != null ? processors.get(fuelId) : null;
+        ConversionUtil.ProgressInfo progress = processor != null ? processor.getProgressInfo(location, plugin) :
+                new ConversionUtil.ProgressInfo(false, null, 0, 0);
+        String statusText = "§c待机";
+        int energy = getCurrentFuelEnergy(menu);
+
+        boolean outputFull = Arrays.stream(OUTPUT_SLOTS)
+                .allMatch(slot -> {
+                    ItemStack item = menu.getItemInSlot(slot);
+                    return item != null && item.getAmount() >= item.getMaxStackSize();
+                });
+
+        if (outputFull) {
+            statusText = "§c待机 (§e输出槽已满)";
+        } else if (progress.isProcessing()) {
+            double remainingSeconds = progress.getRemainingSeconds();
+            statusText = "§a运行中 (§e剩余: " + String.format("%.1f", remainingSeconds) + "秒)";
+        } else if (inputItem != null && fuelId != null && fuels.containsKey(fuelId)) {
+            statusText = "§a准备运行";
+        } else if (inputItem != null && inputItem.getType() != Material.AIR) {
+            statusText = "§c待机 (§e无效燃料)";
+        }
+
+        ItemStack status = new CustomItemStack(Material.REDSTONE, "§c状态: " + statusText, "§7能量: " + energy + " J/tick");
+        menu.replaceExistingItem(STATUS_SLOT, status);
+        menu.addMenuClickHandler(STATUS_SLOT, (p, s, item, action) -> false);
     }
 
     protected int getCurrentFuelEnergy(BlockMenu menu) {
@@ -242,24 +352,6 @@ public abstract class StarsGenerator extends SlimefunItem implements EnergyNetPr
         String fuelId = Util.getSlimefunId(inputItem);
         FuelConfig config = fuelId != null ? fuels.get(fuelId) : null;
         return config != null ? config.energyPerTick : 0;
-    }
-
-    protected void updateStatus(BlockMenu menu) {
-        ItemStack inputItem = menu.getItemInSlot(INPUT_SLOT);
-        Location location = menu.getLocation();
-        ConversionUtil.ProgressInfo progress = processor.getProgressInfo(location, plugin);
-        String statusText = "§c待机";
-        int energy = getCurrentFuelEnergy(menu);
-
-        if (progress.isProcessing()) {
-            statusText = "§a运行中 (§e剩余: " + String.format("%.1f", progress.getRemainingSeconds()) + "秒)";
-        } else if (Util.getSlimefunId(inputItem) != null && fuels.containsKey(Util.getSlimefunId(inputItem))) {
-            statusText = "§a准备运行";
-        }
-
-        ItemStack status = new CustomItemStack(Material.REDSTONE, "§c状态: " + statusText, "§7能量: " + energy + " J/tick");
-        menu.replaceExistingItem(STATUS_SLOT, status);
-        menu.addMenuClickHandler(STATUS_SLOT, (p, s, item, action) -> false);
     }
 
     protected void setupMenuPreset() {
@@ -317,7 +409,6 @@ public abstract class StarsGenerator extends SlimefunItem implements EnergyNetPr
                 if (!canInsertInput) {
                     event.setCancelled(true);
                     player.sendMessage("§c输入槽已满或不可存入！");
-                    plugin.getLogger().info("阻止 Shift+左键: 输入槽不可用, 物品=" + current.getType() + ", 槽位=" + slot);
                 }
             }
         }
