@@ -30,12 +30,13 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import javax.annotation.Nonnull;
 import java.io.File;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
+import java.util.logging.Level;
 
 public abstract class StarsQuarry extends SlimefunItem implements EnergyNetComponent, Listener {
     protected static final int STATUS_SLOT = 13;
@@ -45,8 +46,10 @@ public abstract class StarsQuarry extends SlimefunItem implements EnergyNetCompo
     protected final int energyConsumption;
     protected final JavaPlugin plugin;
     protected final String quarryId;
-    protected final ConversionUtil.ConversionProcessor processor;
+    protected final ConversionUtil.AbstractConversionProcessor processor;
     protected final String outputId;
+    protected final ConversionUtil.StateItemProvider stateItemProvider;
+    protected final ConversionUtil.SpecialCaseHandler specialCaseHandler;
 
     public StarsQuarry(ItemGroup itemGroup, SlimefunItemStack item, RecipeType recipeType, ItemStack[] recipe,
                        XingchenExpansion plugin, String quarryId) {
@@ -69,6 +72,8 @@ public abstract class StarsQuarry extends SlimefunItem implements EnergyNetCompo
             this.preset = null;
             this.processor = null;
             this.outputId = null;
+            this.stateItemProvider = null;
+            this.specialCaseHandler = null;
             return;
         }
 
@@ -83,21 +88,31 @@ public abstract class StarsQuarry extends SlimefunItem implements EnergyNetCompo
             this.preset = null;
             this.processor = null;
             this.outputId = null;
+            this.stateItemProvider = null;
+            this.specialCaseHandler = null;
             return;
         }
 
         this.energyConsumption = energyConsumption;
         this.outputId = outputId;
+        this.stateItemProvider = new QuarryStateItemProvider();
+        this.specialCaseHandler = new QuarrySpecialCaseHandler();
 
         ConversionUtil.ConversionRule rule = new ConversionUtil.ConversionRule(
-                null, // 无输入
-                List.of(outputId),
-                null,
+                Collections.emptyList(),
+                List.of(new ConversionUtil.SlimefunItemMatcherImpl(outputId)),
+                Collections.emptyList(),
                 List.of(outputAmount),
                 ConversionUtil.OutputMode.ALL,
-                processingTime
+                processingTime,
+                STATUS_SLOT,
+                true
         );
-        this.processor = new ConversionUtil.NoInputProcessor(List.of(rule));
+        this.processor = new ConversionUtil.NoInputProcessor(
+                List.of(rule),
+                stateItemProvider,
+                specialCaseHandler
+        );
 
         this.preset = new BlockMenuPreset(getId(), item.getDisplayName()) {
             @Override
@@ -141,15 +156,49 @@ public abstract class StarsQuarry extends SlimefunItem implements EnergyNetCompo
 
         addItemHandler(new BlockBreakHandler(false, false) {
             @Override
-            public void onPlayerBreak(BlockBreakEvent e, ItemStack item, java.util.List<ItemStack> drops) {
+            public void onPlayerBreak(BlockBreakEvent e, ItemStack item, List<ItemStack> drops) {
                 Block b = e.getBlock();
                 BlockMenu inv = BlockStorage.getInventory(b);
                 if (inv != null) {
                     inv.dropItems(b.getLocation(), OUTPUT_SLOTS);
+                    processor.terminateForce(inv, b.getLocation(), plugin, new int[0], OUTPUT_SLOTS);
                 }
                 BlockStorage.clearBlockInfo(b);
             }
         });
+    }
+
+    private class QuarryStateItemProvider implements ConversionUtil.StateItemProvider {
+        @Override
+        @Nonnull
+        public Map<ConversionUtil.MachineState, ItemStack> getStateItems() {
+            Map<ConversionUtil.MachineState, ItemStack> items = new HashMap<>();
+            items.put(ConversionUtil.MachineState.CONVERTING, new CustomItemStack(
+                    Material.LIME_DYE, "§a运行中",
+                    "§7状态: 运行中", "§7" + LoreBuilder.powerPerSecond(energyConsumption)
+            ));
+            items.put(ConversionUtil.MachineState.OUTPUT_FULL, new CustomItemStack(
+                    Material.REDSTONE, "§c暂停",
+                    "§7状态: 输出槽已满", "§7" + LoreBuilder.powerPerSecond(energyConsumption)
+            ));
+            items.put(ConversionUtil.MachineState.IDLE, new CustomItemStack(
+                    Material.REDSTONE, "§c待机",
+                    "§7状态: 待机", "§7" + LoreBuilder.powerPerSecond(energyConsumption)
+            ));
+            items.put(ConversionUtil.MachineState.NO_ENERGY, new CustomItemStack(
+                    Material.REDSTONE, "§c能量不足",
+                    "§7状态: 能量不足", "§7" + LoreBuilder.powerPerSecond(energyConsumption)
+            ));
+            return items;
+        }
+    }
+
+    private class QuarrySpecialCaseHandler implements ConversionUtil.SpecialCaseHandler {
+        @Override
+        @Nonnull
+        public Optional<ItemStack> handleSpecialCase(@Nonnull ConversionUtil.ProgressInfo info) {
+            return Optional.empty();
+        }
     }
 
     public BlockMenuPreset getPreset() {
@@ -161,7 +210,7 @@ public abstract class StarsQuarry extends SlimefunItem implements EnergyNetCompo
         process(b.getLocation());
     }
 
-    public void process(@Nonnull Location location) {
+    protected void process(@Nonnull Location location) {
         if (preset == null || processor == null) return;
 
         if (BlockStorage.getLocationInfo(location, "id") == null) {
@@ -175,50 +224,90 @@ public abstract class StarsQuarry extends SlimefunItem implements EnergyNetCompo
                 menu = new BlockMenu(preset, location);
                 newItemMenu(menu);
             } catch (IllegalStateException e) {
+                plugin.getLogger().log(Level.WARNING, "无法创建 BlockMenu: " + location, e);
                 return;
             }
         }
 
-        // 检查输出槽是否满
-        BlockMenu finalMenu = menu;
-        boolean outputFull = Arrays.stream(OUTPUT_SLOTS)
-                .allMatch(slot -> {
-                    ItemStack item = finalMenu.getItemInSlot(slot);
-                    return item != null && item.getAmount() >= item.getMaxStackSize();
-                });
+        // 获取状态和规则
+        ConversionUtil.TaskState taskState = processor.getTaskState(location);
+        ConversionUtil.ProgressInfo progress = processor.getProgressInfo(location, plugin, new int[0], OUTPUT_SLOTS);
+        String ruleId = progress.getRuleId();
+        ConversionUtil.ConversionRule activeRule = null;
+        if (ruleId != null) {
+            activeRule = processor.getRules().stream()
+                    .filter(r -> r.getRuleId().equals(ruleId))
+                    .findFirst()
+                    .orElse(null);
+        }
 
-        // 检查是否需要处理
-        ConversionUtil.ProgressInfo progress = processor.getProgressInfo(location, plugin);
-        boolean shouldProcess = !outputFull && (!progress.isProcessing() || progress.getCurrentTicks() > 0);
-
-        if (shouldProcess && !takeCharge(location)) {
-            updateStatus(menu, outputFull);
+        // 检查能量
+        if (!takeCharge(location)) {
+            if (taskState == ConversionUtil.TaskState.RUNNING) {
+                processor.pause(menu, location, plugin, new int[0], OUTPUT_SLOTS);
+            }
+            updateStatus(menu, location);
             return;
         }
 
-        boolean processed = shouldProcess && processor.process(menu, location, plugin, new int[0], OUTPUT_SLOTS);
-        updateStatus(menu, outputFull);
-    }
-
-    protected void updateStatus(BlockMenu menu, boolean outputFull) {
-        Location location = menu.getLocation();
-        ConversionUtil.ProgressInfo progress = processor.getProgressInfo(location, plugin);
-        int currentCharge = getCharge(location);
-        String statusText;
-
-        String powerPerTick = LoreBuilder.powerPerSecond(energyConsumption);
-        String powerCharged = LoreBuilder.powerCharged(currentCharge, getCapacity());
-
-        if (outputFull) {
-            statusText = "§c待机 §e(输出槽已满)";
-        } else if (progress.isProcessing() && currentCharge >= energyConsumption) {
-            statusText = "§a运行中 §e(剩余: " + String.format("%.1f", progress.getRemainingSeconds()) + "秒)";
-        } else {
-            statusText = currentCharge >= energyConsumption ? "§a待机" : "§c待机 §e(能量不足)";
+        // 检查输出槽
+        if (activeRule != null && !processor.canOutput(menu, OUTPUT_SLOTS, activeRule, plugin, location)) {
+            if (taskState == ConversionUtil.TaskState.RUNNING) {
+                processor.pause(menu, location, plugin, new int[0], OUTPUT_SLOTS);
+            }
+            updateStatus(menu, location);
+            return;
         }
 
-        ItemStack status = new CustomItemStack(Material.REDSTONE, "§c状态: " + statusText, powerPerTick, powerCharged);
-        menu.replaceExistingItem(STATUS_SLOT, status);
+        // 恢复运行
+        if (taskState == ConversionUtil.TaskState.PAUSED && activeRule != null) {
+            processor.resume(menu, location, plugin, new int[0], OUTPUT_SLOTS);
+        }
+
+        // 处理转化
+        boolean processed = processor.process(menu, location, plugin, new int[0], OUTPUT_SLOTS);
+
+        // 更新状态
+        updateStatus(menu, location);
+    }
+
+    protected void updateStatus(@Nonnull BlockMenu menu, @Nonnull Location location) {
+        ConversionUtil.ProgressInfo progress = processor.getProgressInfo(location, plugin, new int[0], OUTPUT_SLOTS);
+        int currentCharge = getCharge(location);
+
+        ItemStack statusItem = specialCaseHandler.handleSpecialCase(progress).orElseGet(() -> {
+            Map<ConversionUtil.MachineState, ItemStack> stateItems = stateItemProvider.getStateItems();
+            ItemStack template = stateItems.getOrDefault(progress.getState(),
+                    new ConversionUtil.DefaultStateItemProvider().getStateItems().get(progress.getState()));
+            if (template == null) {
+                plugin.getLogger().warning("状态模板缺失: state=" + progress.getState() + ", location=" + location);
+                template = new CustomItemStack(Material.REDSTONE, "§c状态: " + progress.getState().getDisplayName());
+            }
+            ItemStack result = template.clone();
+            ItemMeta meta = result.getItemMeta();
+            if (meta == null) {
+                meta = plugin.getServer().getItemFactory().getItemMeta(result.getType());
+                result.setItemMeta(meta);
+            }
+            List<String> lore = new ArrayList<>(meta.hasLore() ? meta.getLore() : Collections.emptyList());
+            int statusIndex = -1;
+            for (int i = 0; i < lore.size(); i++) {
+                if (lore.get(i).startsWith("§7状态:")) {
+                    statusIndex = i;
+                    break;
+                }
+            }
+            lore.add(statusIndex >= 0 ? statusIndex + 1 : lore.size(), "§7" + LoreBuilder.powerCharged(currentCharge, getCapacity()));
+            if (progress.isProcessing() && progress.getState() == ConversionUtil.MachineState.CONVERTING) {
+                lore.add(statusIndex >= 0 ? statusIndex + 2 : lore.size(), "§7进度: " + progress.getProgressBar(10));
+                lore.add(statusIndex >= 0 ? statusIndex + 3 : lore.size(), "§7剩余: " + String.format("%.1fs", progress.getRemainingSeconds()));
+            }
+            meta.setLore(lore);
+            result.setItemMeta(meta);
+            return result;
+        });
+
+        menu.replaceExistingItem(STATUS_SLOT, statusItem);
         menu.addMenuClickHandler(STATUS_SLOT, ChestMenuUtils.getEmptyClickHandler());
     }
 
@@ -273,12 +362,9 @@ public abstract class StarsQuarry extends SlimefunItem implements EnergyNetCompo
             preset.addItem(i, new CustomItemStack(Material.GRAY_STAINED_GLASS_PANE, " "), ChestMenuUtils.getEmptyClickHandler());
         }
         preset.addMenuClickHandler(STATUS_SLOT, ChestMenuUtils.getEmptyClickHandler());
-        for (int slot : OUTPUT_SLOTS) {
-            preset.addMenuClickHandler(slot, ChestMenuUtils.getEmptyClickHandler());
-        }
     }
 
-    public void newItemMenu(BlockMenu menu) {
+    public void newItemMenu(@Nonnull BlockMenu menu) {
         for (int i = 0; i < 27; i++) {
             int finalI = i;
             if (i == STATUS_SLOT || Arrays.stream(OUTPUT_SLOTS).anyMatch(s -> s == finalI)) continue;
@@ -288,8 +374,7 @@ public abstract class StarsQuarry extends SlimefunItem implements EnergyNetCompo
                 menu.addMenuClickHandler(i, ChestMenuUtils.getEmptyClickHandler());
             }
         }
-        ItemStack status = new CustomItemStack(Material.REDSTONE, "§c状态: 待机");
-        menu.replaceExistingItem(STATUS_SLOT, status);
+        menu.replaceExistingItem(STATUS_SLOT, new CustomItemStack(Material.REDSTONE, "§c状态: 待机"));
         menu.addMenuClickHandler(STATUS_SLOT, ChestMenuUtils.getEmptyClickHandler());
         for (int slot : OUTPUT_SLOTS) {
             menu.replaceExistingItem(slot, null);
@@ -298,15 +383,13 @@ public abstract class StarsQuarry extends SlimefunItem implements EnergyNetCompo
 
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
-        if (Util.protectOutputSlots(event, plugin, OUTPUT_SLOTS, outputId,
-                menu -> menu.getPreset().getID().equals(getId()))) {
+        if (!(event.getInventory().getHolder() instanceof BlockMenu menu) || !menu.getPreset().getID().equals(getId())) {
             return;
         }
+        menu.save(menu.getLocation());
     }
-
     @EventHandler
     public void onInventoryDrag(InventoryDragEvent event) {
-        Util.protectOutputSlots(event, plugin, OUTPUT_SLOTS, outputId,
-                menu -> menu.getPreset().getID().equals(getId()));
+
     }
 }

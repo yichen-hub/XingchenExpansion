@@ -25,10 +25,10 @@ public class ManifoldBuff implements Listener {
     private final Map<UUID, BukkitRunnable> dashTasks = new HashMap<>();
     private final Map<UUID, Long> cooldowns = new HashMap<>();
     private final Random random = new Random();
-    private final double startSpeed = 0.2; // 起始速度 1 方块/tick
-    private final double endSpeed = 1.7; // 最大速度 1.7 方块/tick
-    private final double maxSpeedTime = 0.6; // 0.7 秒达到最大速度
-    private final double maxDuration = 1.2; // 最长冲刺时间 1.5 秒
+    private final double startSpeed = 0.2; // 起始速度
+    private final double endSpeed = 1.7; // 最大速度
+    private final double maxSpeedTime = 0.6; // 最大速度前摇
+    private final double maxDuration = 1.2; // 最长冲刺时间
 
     public ManifoldBuff(JavaPlugin plugin, BuffManager buffManager) {
         this.plugin = plugin;
@@ -49,7 +49,7 @@ public class ManifoldBuff implements Listener {
     public void tryStartDash(Player player) {
         UUID uuid = player.getUniqueId();
         long currentTime = System.currentTimeMillis();
-        if (cooldowns.containsKey(uuid) && currentTime - cooldowns.get(uuid) < 500) { // 冷却改为 0.5 秒
+        if (cooldowns.containsKey(uuid) && currentTime - cooldowns.get(uuid) < 500) {
             return;
         }
         Vector direction = player.getLocation().getDirection();

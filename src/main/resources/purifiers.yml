@@ -1,13 +1,13 @@
 purifiers:
   STARS_PURIFIER_L1:
     energy_consumption: 50
-    processing_time: 6
+    processing_time: 100
     input_id: STARS_WASTE
     output_id: STARS_SOURCE_QUALITY
     output_amount: 1
   STARS_PURIFIER_L2:
     energy_consumption: 100
-    processing_time: 3000
+    processing_time: 80
     input_id: STARS_WASTE
     output_id: STARS_SOURCE_QUALITY
     output_amount: 2
