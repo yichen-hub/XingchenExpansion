@@ -1,9 +1,7 @@
 package me.xingchen.XingchenExpansion.item;
 
-import io.github.thebusybiscuit.slimefun4.api.items.SlimefunItem;
 import io.github.thebusybiscuit.slimefun4.api.items.SlimefunItemStack;
 import io.github.thebusybiscuit.slimefun4.api.recipes.RecipeType;
-import io.github.thebusybiscuit.slimefun4.implementation.SlimefunItems;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 
@@ -85,8 +83,6 @@ public class Recipes {
                 new ItemStack[]{},
                 Items.FORGE_TALISMAN
         ));
-
-
         //  流形
         addRecipe(Items.MANIFOLD, new RecipeEntry(
                 RecipeType.ENHANCED_CRAFTING_TABLE,
@@ -107,105 +103,207 @@ public class Recipes {
                 },
                 Items.WEAVING
         ));
+        //钻石模板
+        addRecipe(Items.DIAMOND_TEMPLATE, new RecipeEntry(
+                RecipeType.ENHANCED_CRAFTING_TABLE,
+                new ItemStack[]{
+                        Items.STARS_ORE,              null,                                        Items.STARS_ORE,
+                        null,                         new ItemStack(Material.STRING),              null,
+                        Items.STARS_ORE,              null,                                        Items.STARS_ORE
+                },
+                Items.DIAMOND_TEMPLATE
+        ));
 
         //发电机
+        //星辰太阳能发电机L1
+        addRecipe(Items.STARS_SOLAR_GENERATOR_L1, new RecipeEntry(
+                RecipeType.ENHANCED_CRAFTING_TABLE,
+                new ItemStack[]{
+                        Items.STARS_ORE,              null,                                        Items.STARS_ORE,
+                        null,                         new ItemStack(Material.STRING),              null,
+                        Items.STARS_ORE,              null,                                        Items.STARS_ORE
+                },
+                Items.STARS_SOLAR_GENERATOR_L1
+        ));
+        //星辰太阳能发电机L2
+        addRecipe(Items.STARS_SOLAR_GENERATOR_L2, new RecipeEntry(
+                RecipeType.ENHANCED_CRAFTING_TABLE,
+                new ItemStack[]{
+                        Items.STARS_ORE,              null,                                        Items.STARS_ORE,
+                        null,                         new ItemStack(Material.STRING),              null,
+                        Items.STARS_ORE,              null,                                        Items.STARS_ORE
+                },
+                Items.STARS_SOLAR_GENERATOR_L3
+        ));
+        //星辰太阳能发电机L3
+        addRecipe(Items.STARS_SOLAR_GENERATOR_L3, new RecipeEntry(
+                RecipeType.ENHANCED_CRAFTING_TABLE,
+                new ItemStack[]{
+                        Items.STARS_ORE,              null,                                        Items.STARS_ORE,
+                        null,                         new ItemStack(Material.STRING),              null,
+                        Items.STARS_ORE,              null,                                        Items.STARS_ORE
+                },
+                Items.STARS_SOLAR_GENERATOR_L3
+        ));
+        //星辰太阳能发电机L4
+        addRecipe(Items.STARS_SOLAR_GENERATOR_L4, new RecipeEntry(
+                RecipeType.ENHANCED_CRAFTING_TABLE,
+                new ItemStack[]{
+                        Items.STARS_ORE,              null,                                        Items.STARS_ORE,
+                        null,                         new ItemStack(Material.STRING),              null,
+                        Items.STARS_ORE,              null,                                        Items.STARS_ORE
+                },
+                Items.STARS_SOLAR_GENERATOR_L4
+        ));
+        //星辰太阳能发电机L5
+        addRecipe(Items.STARS_SOLAR_GENERATOR_L5, new RecipeEntry(
+                RecipeType.ENHANCED_CRAFTING_TABLE,
+                new ItemStack[]{
+                        Items.STARS_ORE,              null,                                        Items.STARS_ORE,
+                        null,                         new ItemStack(Material.STRING),              null,
+                        Items.STARS_ORE,              null,                                        Items.STARS_ORE
+                },
+                Items.STARS_SOLAR_GENERATOR_L5
+        ));
+        //星辰太阳能发电机-终极
+        addRecipe(Items.STARS_SOLAR_GENERATOR_ULTIMATE, new RecipeEntry(
+                RecipeType.ENHANCED_CRAFTING_TABLE,
+                new ItemStack[]{
+                        Items.STARS_ORE,              null,                                        Items.STARS_ORE,
+                        null,                         new ItemStack(Material.STRING),              null,
+                        Items.STARS_ORE,              null,                                        Items.STARS_ORE
+                },
+                Items.STARS_SOLAR_GENERATOR_ULTIMATE
+        ));
 
-        // 星辰发电机Ⅰ
+        //星辰发电机L1
         addRecipe(Items.STARS_GENERATOR_L1, new RecipeEntry(
                 RecipeType.ENHANCED_CRAFTING_TABLE,
                 new ItemStack[]{
-                        Items.STARS_INGOT,              SlimefunItems.STEEL_INGOT,                  Items.STARS_INGOT,
-                        SlimefunItems.STEEL_INGOT,      SlimefunItems.ELECTRO_MAGNET,               SlimefunItems.STEEL_INGOT,
-                        Items.STARS_INGOT,              SlimefunItems.STEEL_INGOT,                  Items.STARS_INGOT
+                        Items.STARS_ORE,              null,                                        Items.STARS_ORE,
+                        null,                         new ItemStack(Material.STRING),              null,
+                        Items.STARS_ORE,              null,                                        Items.STARS_ORE
                 },
                 Items.STARS_GENERATOR_L1
         ));
-        // 星辰发电机Ⅱ
+        //星辰发电机L2
         addRecipe(Items.STARS_GENERATOR_L2, new RecipeEntry(
                 RecipeType.ENHANCED_CRAFTING_TABLE,
                 new ItemStack[]{
-                        Items.STARS_INGOT,              SlimefunItems.STEEL_INGOT,                  Items.STARS_INGOT,
-                        SlimefunItems.REINFORCED_ALLOY_INGOT,Items.STARS_GENERATOR_L1,              SlimefunItems.REINFORCED_ALLOY_INGOT,
-                        Items.STARS_INGOT,              SlimefunItems.STEEL_INGOT,                  Items.STARS_INGOT
+                        Items.STARS_ORE,              null,                                        Items.STARS_ORE,
+                        null,                         new ItemStack(Material.STRING),              null,
+                        Items.STARS_ORE,              null,                                        Items.STARS_ORE
                 },
                 Items.STARS_GENERATOR_L2
         ));
-
-        // 星辰太阳能发电机Ⅰ
-        addRecipe(Items.SOLAR_GENERATOR_L1, new RecipeEntry(
+        //星辰发电机-终极
+        addRecipe(Items.STARS_GENERATOR_ULTIMATE, new RecipeEntry(
                 RecipeType.ENHANCED_CRAFTING_TABLE,
                 new ItemStack[]{
-                        Items.STARS_INGOT,              SlimefunItems.STEEL_INGOT,                  Items.STARS_INGOT,
-                        null,                           SlimefunItems.ELECTRO_MAGNET,               null,
-                        Items.STARS_INGOT,              SlimefunItems.STEEL_INGOT,                  Items.STARS_INGOT
+                        Items.STARS_ORE,              null,                                        Items.STARS_ORE,
+                        null,                         new ItemStack(Material.STRING),              null,
+                        Items.STARS_ORE,              null,                                        Items.STARS_ORE
                 },
-                Items.SOLAR_GENERATOR_L1
-        ));
-
-        // 星辰太阳能发电机Ⅱ
-        addRecipe(Items.SOLAR_GENERATOR_L2, new RecipeEntry(
-                RecipeType.ENHANCED_CRAFTING_TABLE,
-                new ItemStack[]{
-                        Items.STARS_INGOT,              SlimefunItems.STEEL_INGOT,                  Items.STARS_INGOT,
-                        null,                           Items.SOLAR_GENERATOR_L1,                   null,
-                        Items.STARS_INGOT,              SlimefunItems.STEEL_INGOT,                  Items.STARS_INGOT
-                },
-                Items.SOLAR_GENERATOR_L2
-        ));
-        //  星辰太阳能发电机Ⅲ
-        addRecipe(Items.SOLAR_GENERATOR_L3, new RecipeEntry(
-                RecipeType.ENHANCED_CRAFTING_TABLE,
-                new ItemStack[]{
-                        Items.STARS_INGOT,              SlimefunItems.STEEL_INGOT,                  Items.STARS_INGOT,
-                        null,                           Items.SOLAR_GENERATOR_L2,                   null,
-                        Items.STARS_INGOT,              SlimefunItems.STEEL_INGOT,                  Items.STARS_INGOT
-                },
-                Items.SOLAR_GENERATOR_L3
+                Items.STARS_GENERATOR_ULTIMATE
         ));
 
         //机器
 
-        // 星辰净化器Ⅰ
-        addRecipe(Items.PURIFIER_L1, new RecipeEntry(
-                RecipeType.ENHANCED_CRAFTING_TABLE,
-                new ItemStack[]{
-                        Items.STARS_INGOT,              Items.STARS_CRYSTAL,                        Items.STARS_INGOT,
-                        SlimefunItems.GOLD_24K,         SlimefunItems.ELECTRO_MAGNET,               SlimefunItems.GOLD_24K,
-                        Items.STARS_INGOT,              Items.STARS_CRYSTAL,                        Items.STARS_INGOT
-                },
-                Items.PURIFIER_L1
-        ));
-        // 星辰净化器Ⅱ
-        addRecipe(Items.PURIFIER_L2, new RecipeEntry(
-                RecipeType.ENHANCED_CRAFTING_TABLE,
-                new ItemStack[]{
-                        Items.STARS_INGOT,              Items.STARS_CRYSTAL,                        Items.STARS_INGOT,
-                        SlimefunItems.BLISTERING_INGOT, Items.PURIFIER_L1,                          SlimefunItems.BLISTERING_INGOT,
-                        Items.STARS_INGOT,              Items.STARS_CRYSTAL,                        Items.STARS_INGOT
-                },
-                Items.PURIFIER_L2
-        ));
-        // 星辰矿机Ⅰ
+        //星辰矿机L1
         addRecipe(Items.STARS_QUARRY_L1, new RecipeEntry(
                 RecipeType.ENHANCED_CRAFTING_TABLE,
                 new ItemStack[]{
-                        Items.STARS_INGOT,              Items.STARS_ORE,                            Items.STARS_INGOT,
-                        SlimefunItems.GOLD_8K,          SlimefunItems.ELECTRO_MAGNET,               SlimefunItems.GOLD_8K,
-                        Items.STARS_INGOT,              Items.STARS_ORE,                            Items.STARS_INGOT
+                        Items.STARS_ORE,              null,                                        Items.STARS_ORE,
+                        null,                         new ItemStack(Material.IRON_PICKAXE),        null,
+                        Items.STARS_ORE,              null,                                        Items.STARS_ORE
                 },
                 Items.STARS_QUARRY_L1
         ));
-        // 星辰矿机Ⅱ
+        //星辰矿机L2
         addRecipe(Items.STARS_QUARRY_L2, new RecipeEntry(
                 RecipeType.ENHANCED_CRAFTING_TABLE,
                 new ItemStack[]{
-                        Items.STARS_INGOT,              Items.STARS_ORE,                            Items.STARS_INGOT,
-                        SlimefunItems.GOLD_24K,         Items.STARS_QUARRY_L1,                      SlimefunItems.GOLD_24K,
-                        Items.STARS_INGOT,              Items.STARS_ORE,                            Items.STARS_INGOT
+                        Items.STARS_ORE,              null,                                        Items.STARS_ORE,
+                        null,                         new ItemStack(Material.IRON_PICKAXE),        null,
+                        Items.STARS_ORE,              null,                                        Items.STARS_ORE
                 },
                 Items.STARS_QUARRY_L2
         ));
+        //星辰矿机-终极
+        addRecipe(Items.STARS_QUARRY_ULTIMATE, new RecipeEntry(
+                RecipeType.ENHANCED_CRAFTING_TABLE,
+                new ItemStack[]{
+                        Items.STARS_ORE,              null,                                        Items.STARS_ORE,
+                        null,                         new ItemStack(Material.IRON_PICKAXE),        null,
+                        Items.STARS_ORE,              null,                                        Items.STARS_ORE
+                },
+                Items.STARS_QUARRY_ULTIMATE
+        ));
+
+        //星辰净化装置L1
+        addRecipe(Items.STARS_PURIFIER_L1, new RecipeEntry(
+                RecipeType.ENHANCED_CRAFTING_TABLE,
+                new ItemStack[]{
+                        Items.STARS_ORE,              null,                                        Items.STARS_ORE,
+                        null,                         new ItemStack(Material.IRON_PICKAXE),        null,
+                        Items.STARS_ORE,              null,                                        Items.STARS_ORE
+                },
+                Items.STARS_PURIFIER_L1
+        ));
+        //星辰净化装置L2
+        addRecipe(Items.STARS_PURIFIER_L2, new RecipeEntry(
+                RecipeType.ENHANCED_CRAFTING_TABLE,
+                new ItemStack[]{
+                        Items.STARS_ORE,              null,                                        Items.STARS_ORE,
+                        null,                         new ItemStack(Material.IRON_PICKAXE),        null,
+                        Items.STARS_ORE,              null,                                        Items.STARS_ORE
+                },
+                Items.STARS_PURIFIER_L2
+        ));
+        //星辰净化装置-终极
+        addRecipe(Items.STARS_PURIFIER_ULTIMATE, new RecipeEntry(
+                RecipeType.ENHANCED_CRAFTING_TABLE,
+                new ItemStack[]{
+                        Items.STARS_ORE,              null,                                        Items.STARS_ORE,
+                        null,                         new ItemStack(Material.IRON_PICKAXE),        null,
+                        Items.STARS_ORE,              null,                                        Items.STARS_ORE
+                },
+                Items.STARS_PURIFIER_ULTIMATE
+        ));
+
+        //星辰钻石生成器
+        addRecipe(Items.STARS_DIAMOND_QUARRY_L1, new RecipeEntry(
+                RecipeType.ENHANCED_CRAFTING_TABLE,
+                new ItemStack[]{
+                        Items.STARS_ORE,              null,                                        Items.STARS_ORE,
+                        null,                         new ItemStack(Material.IRON_PICKAXE),        null,
+                        Items.STARS_ORE,              null,                                        Items.STARS_ORE
+                },
+                Items.STARS_DIAMOND_QUARRY_L1
+        ));
+        //星辰钻石生成器L2
+        addRecipe(Items.STARS_DIAMOND_QUARRY_L2, new RecipeEntry(
+                RecipeType.ENHANCED_CRAFTING_TABLE,
+                new ItemStack[]{
+                        Items.STARS_ORE,              null,                                        Items.STARS_ORE,
+                        null,                         new ItemStack(Material.IRON_PICKAXE),        null,
+                        Items.STARS_ORE,              null,                                        Items.STARS_ORE
+                },
+                Items.STARS_DIAMOND_QUARRY_L2
+        ));
+        //星辰钻石生成器-终极
+        addRecipe(Items.STARS_DIAMOND_QUARRY_ULTIMATE, new RecipeEntry(
+                RecipeType.ENHANCED_CRAFTING_TABLE,
+                new ItemStack[]{
+                        Items.STARS_ORE,              null,                                        Items.STARS_ORE,
+                        null,                         new ItemStack(Material.IRON_PICKAXE),        null,
+                        Items.STARS_ORE,              null,                                        Items.STARS_ORE
+                },
+                Items.STARS_DIAMOND_QUARRY_ULTIMATE
+        ));
     }
+
+
 
     public static List<RecipeEntry> getRecipes(SlimefunItemStack item) {
         return RECIPES.getOrDefault(item, Collections.emptyList());

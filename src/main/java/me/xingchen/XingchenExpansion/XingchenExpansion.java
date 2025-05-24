@@ -24,6 +24,7 @@ public class XingchenExpansion extends JavaPlugin implements SlimefunAddon {
     public static ItemGroup MACHINE_GROUP;
     public static ItemGroup MATERIAL_GROUP;
     public static ItemGroup ABILITY_ITEM_GROUP;
+    public static ItemGroup ULTIMATE_MACHINE_GROUP;
 
     @Override
     public void onEnable() {
@@ -51,6 +52,11 @@ public class XingchenExpansion extends JavaPlugin implements SlimefunAddon {
                     new NamespacedKey(this, "xingchen_ability_items"),
                     PARENT_GROUP,
                     new SlimefunItemStack("XINGCHEN_ABILITIES_ITEMS", Material.ECHO_SHARD, "&6技能物品","包含星辰拓展的所有技能物品")
+            );
+            ULTIMATE_MACHINE_GROUP = new SubItemGroup(
+                    new NamespacedKey(this, "xingchen_ultimate_machines"),
+                    PARENT_GROUP,
+                    new SlimefunItemStack("XINGCHEN_ULTIMATE_MACHINES", Material.CHISELED_QUARTZ_BLOCK, "&b终极机器","包含星辰拓展的所有终极机器")
             );
 
             // 注册所有物品
